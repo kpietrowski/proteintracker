@@ -6,24 +6,54 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    "plugins": [
+      "expo-dev-client"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "This app uses the microphone to record voice input for logging protein intake.",
+        "NSCameraUsageDescription": "This app uses the camera to scan food barcodes for easier protein logging.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.protein.proteintracker"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.INTERNET"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "OPENAI_API_KEY": "your-openai-api-key-here",
+      "SUPABASE_URL": "your-supabase-url-here",
+      "SUPABASE_ANON_KEY": "your-supabase-anon-key-here",
+      "REVENUECAT_API_KEY_IOS": "your-revenuecat-ios-key-here",
+      "REVENUECAT_API_KEY_ANDROID": "your-revenuecat-android-key-here",
+      "SUPERWALL_API_KEY": "your-superwall-api-key-here",
+      "APP_ENV": "development",
+      "eas": {
+        "projectId": "871bb8e5-36a8-48de-9d2f-e83e38077226"
+      }
+    },
+    "owner": "katiepietrowski"
   }
 }
