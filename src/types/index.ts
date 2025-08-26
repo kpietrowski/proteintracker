@@ -110,12 +110,19 @@ export type MainTabParamList = {
 
 export type OnboardingStackParamList = {
   Welcome: undefined;
-  Gender: undefined;
+  CurrentTracking: undefined;
+  NutritionChallenges: undefined;
+  GoalImportance: undefined;
   Age: undefined;
   Height: undefined;
   Weight: undefined;
-  ActivityLevel: undefined;
+  Gender: undefined;
+  ExerciseFrequency: undefined;
+  ExerciseType: undefined;
+  DreamOutcome: undefined;
+  GoalCalculation: undefined;
   Final: undefined;
+  ActivityLevel: undefined; // Keep for backward compatibility
   Paywall: undefined;
   PhoneAuth: undefined;
   CodeVerification: { phoneNumber: string };

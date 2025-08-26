@@ -85,9 +85,11 @@ export default function RootNavigator() {
               name="VoiceInput" 
               component={VoiceInputModal}
               options={{
-                presentation: 'modal',
-                headerShown: true,
-                headerTitle: 'Log Protein',
+                presentation: 'transparentModal',
+                headerShown: false,
+                cardStyle: { backgroundColor: 'transparent' },
+                cardOverlayEnabled: true,
+                animation: 'slide_from_bottom',
               }}
             />
           </>

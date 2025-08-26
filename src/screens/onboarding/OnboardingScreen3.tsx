@@ -1,30 +1,71 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useOnboarding } from '../../context/OnboardingContext';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 
 export default function OnboardingScreen3() {
   const navigation = useNavigation();
-  const { state, setActivityLevel } = useOnboarding();
-  const [selectedActivity, setSelectedActivity] = useState<string>(state.data.activityLevel || '');
+  const { state, setNutritionChallenges } = useOnboarding();
+  const [selectedChallenges, setSelectedChallenges] = useState<string[]>(() => {
+    return (state?.data?.nutritionChallenges) ? state.data.nutritionChallenges : [];
+  });
 
-  const activityLevels = [
-    'Sedentary (little to no exercise)',
-    'Lightly active (1-3 days/week)',
-    'Moderately active (3-5 days/week)',
-    'Very active (6-7 days/week)',
-    'Extremely active (2x/day or intense)',
+  const challenges = [
+    {
+      id: 'not-enough-protein',
+      text: 'I never know if I\'m eating enough protein',
+      icon: 'help-outline',
+      iconLib: 'Ionicons',
+    },
+    {
+      id: 'forget-tracking',
+      text: 'I forget to track my meals consistently',
+      icon: 'phone-android',
+      iconLib: 'MaterialIcons',
+    },
+    {
+      id: 'confused-foods',
+      text: 'I\'m confused about which foods have protein',
+      icon: 'help-outline',
+      iconLib: 'Ionicons',
+    },
+    {
+      id: 'no-time-planning',
+      text: 'I don\'t have time to plan protein-rich meals',
+      icon: 'access-time',
+      iconLib: 'MaterialIcons',
+    },
+    {
+      id: 'expensive-food',
+      text: 'Healthy high-protein food is expensive',
+      icon: 'attach-money',
+      iconLib: 'MaterialIcons',
+    },
+    {
+      id: 'eat-out-much',
+      text: 'I eat out too much and can\'t control ingredients',
+      icon: 'restaurant',
+      iconLib: 'MaterialIcons',
+    },
+    {
+      id: 'give-up-tracking',
+      text: 'I track for a few days then give up',
+      icon: 'bar-chart',
+      iconLib: 'Ionicons',
+    },
   ];
 
   useEffect(() => {
-    setSelectedActivity(state.data.activityLevel || '');
-  }, [state.data.activityLevel]);
+    const challenges = state?.data?.nutritionChallenges;
+    setSelectedChallenges(challenges || []);
+  }, [state?.data?.nutritionChallenges]);
 
   const handleNext = () => {
-    if (selectedActivity) {
-      setActivityLevel(selectedActivity);
-      navigation.navigate('Final' as never);
+    if (selectedChallenges.length > 0) {
+      setNutritionChallenges(selectedChallenges);
+      navigation.navigate('GoalImportance' as never);
     }
   };
 
@@ -32,55 +73,102 @@ export default function OnboardingScreen3() {
     navigation.goBack();
   };
 
+  const toggleChallenge = (challengeText: string) => {
+    setSelectedChallenges(prev => {
+      if (prev.includes(challengeText)) {
+        return prev.filter(c => c !== challengeText);
+      } else {
+        return [...prev, challengeText];
+      }
+    });
+  };
+
+  const renderIcon = (challenge: any) => {
+    const IconComponent = challenge.iconLib === 'MaterialIcons' ? MaterialIcons : Ionicons;
+    
+    return (
+      <IconComponent 
+        name={challenge.icon} 
+        size={24} 
+        color={(selectedChallenges && selectedChallenges.includes(challenge.text)) ? '#007AFF' : '#6B6B6B'} 
+      />
+    );
+  };
+
+  // Early return if state is not ready
+  if (!state) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <Text>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
+        <View style={styles.progressHeader}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={24} color="#007AFF" />
+          </TouchableOpacity>
+          <Text style={styles.progressText}>Step 3 of 13</Text>
+          <View style={styles.backButton} />
+        </View>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '33%' }]} />
+          <View style={[styles.progressFill, { width: '23.1%' }]} />
         </View>
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
-        <Text style={styles.title}>What's your activity level?</Text>
-        <Text style={styles.subtitle}>
-          This helps us calculate your daily protein needs accurately.
-        </Text>
+      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          <Text style={styles.title}>What's your biggest challenge with nutrition?</Text>
+          <Text style={styles.subtitle}>
+            Select all that apply - understanding your challenges helps us personalize your experience.
+          </Text>
 
-        <View style={styles.optionsContainer}>
-          {activityLevels.map((activity, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.optionCard,
-                selectedActivity === activity && styles.optionCardSelected,
-              ]}
-              onPress={() => setSelectedActivity(activity)}
-            >
-              <Text
+          <View style={styles.optionsContainer}>
+            {challenges.map((challenge) => (
+              <TouchableOpacity
+                key={challenge.id}
                 style={[
-                  styles.optionText,
-                  selectedActivity === activity && styles.optionTextSelected,
+                  styles.optionCard,
+                  (selectedChallenges && selectedChallenges.includes(challenge.text)) && styles.optionCardSelected,
                 ]}
+                onPress={() => toggleChallenge(challenge.text)}
               >
-                {activity}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <View style={styles.optionContent}>
+                  {renderIcon(challenge)}
+                  <View style={styles.textContent}>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        (selectedChallenges && selectedChallenges.includes(challenge.text)) && styles.optionTextSelected,
+                      ]}
+                    >
+                      {challenge.text}
+                    </Text>
+                  </View>
+                  {(selectedChallenges && selectedChallenges.includes(challenge.text)) && (
+                    <Ionicons name="checkmark-circle" size={24} color="#007AFF" />
+                  )}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      </View>
+      </ScrollView>
 
       {/* Next Button */}
       <TouchableOpacity
-        style={[styles.nextButton, !selectedActivity && styles.nextButtonDisabled]}
+        style={[styles.nextButton, (!selectedChallenges || selectedChallenges.length === 0) && styles.nextButtonDisabled]}
         onPress={handleNext}
-        disabled={!selectedActivity}
+        disabled={!selectedChallenges || selectedChallenges.length === 0}
       >
-        <Text style={styles.nextButtonText}>Calculate Results</Text>
+        <Text style={styles.nextButtonText}>Next</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -92,11 +180,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
   },
   progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 20,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   backButton: {
     width: 40,
@@ -105,19 +197,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
-  backArrow: {
-    fontSize: 24,
-    color: '#1A1A1A',
+  progressText: {
+    fontSize: 14,
+    color: '#6B6B6B',
+    textAlign: 'center',
   },
   progressBar: {
-    flex: 1,
     height: 4,
     backgroundColor: '#E5E5E5',
     borderRadius: 2,
@@ -127,29 +218,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#007AFF',
     borderRadius: 2,
   },
-  content: {
+  scrollContent: {
     flex: 1,
+  },
+  content: {
     paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#1A1A1A',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#6B6B6B',
-    marginBottom: 40,
-    lineHeight: 24,
+    marginBottom: 20,
+    lineHeight: 22,
   },
   optionsContainer: {
-    gap: 12,
+    gap: 8,
   },
   optionCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 20,
+    padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -158,15 +252,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
+  optionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  textContent: {
+    flex: 1,
+  },
   optionCardSelected: {
     borderColor: '#007AFF',
     backgroundColor: '#F0F8FF',
   },
   optionText: {
-    fontSize: 18,
+    fontSize: 15,
     fontWeight: '600',
     color: '#1A1A1A',
-    textAlign: 'center',
   },
   optionTextSelected: {
     color: '#007AFF',

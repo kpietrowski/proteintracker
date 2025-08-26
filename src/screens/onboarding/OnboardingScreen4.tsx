@@ -33,20 +33,24 @@ export default function OnboardingScreen4() {
         <View style={styles.container}>
           {/* Progress Bar */}
           <View style={styles.progressContainer}>
-            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-              <Text style={styles.backArrow}>←</Text>
-            </TouchableOpacity>
+            <View style={styles.progressHeader}>
+              <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+                <Text style={styles.backArrow}>←</Text>
+              </TouchableOpacity>
+              <Text style={styles.progressText}>Step 5 of 13</Text>
+              <View style={styles.backButton} />
+            </View>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '44%' }]} />
+              <View style={[styles.progressFill, { width: '38.5%' }]} />
             </View>
           </View>
 
           {/* Content */}
           <View style={styles.content}>
-        <Text style={styles.title}>What's your age?</Text>
-        <Text style={styles.subtitle}>
-          Age is important for calculating your protein requirements.
-        </Text>
+            <Text style={styles.title}>How old are you?</Text>
+            <Text style={styles.subtitle}>
+              Age helps us calculate your personalized protein needs.
+            </Text>
 
         <View style={styles.inputContainer}>
           <TextInput
@@ -91,11 +95,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
   },
   progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 20,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  progressText: {
+    fontSize: 14,
+    color: '#6B6B6B',
+    textAlign: 'center',
   },
   backButton: {
     width: 40,
@@ -104,7 +117,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -116,7 +128,6 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
   },
   progressBar: {
-    flex: 1,
     height: 4,
     backgroundColor: '#E5E5E5',
     borderRadius: 2,

@@ -2,8 +2,15 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface OnboardingData {
-  // Basic user data for protein goal calculation
-  sex: string;
+  // Primary goal (Screen 1)
+  fitnessGoal: string;
+  
+  // Psychology screens (Screens 2-4)
+  currentTrackingMethod?: string;
+  nutritionChallenges?: string[];
+  goalImportance?: number;
+  
+  // Basic user data for protein goal calculation (Screens 5-8)
   age: number;
   
   // Height
@@ -17,10 +24,23 @@ export interface OnboardingData {
   weightLbs?: number;
   weightKg?: number;
   
-  // Activity and goals
-  activityLevel: string;
-  fitnessGoal: string;
+  // Biological sex
+  sex: string;
+  
+  // Activity and exercise (Screens 9-10)
+  exerciseFrequency?: string;
+  exerciseType?: string;
+  activityLevel: string; // Keep for backward compatibility
+  
+  // Dream outcome (Screen 11)
+  dreamOutcome?: string;
+  
+  // Final setup (Screens 12-13)
   proteinGoal: number;
+  userAdjustment?: number;
+  finalGoal?: number;
+  notificationsEnabled?: boolean;
+  reminderTime?: string;
   preferredUnits: 'grams' | 'ounces';
   completedAt: Date;
 }
@@ -31,12 +51,18 @@ interface OnboardingState {
 }
 
 type OnboardingAction =
-  | { type: 'SET_SEX'; payload: string }
+  | { type: 'SET_FITNESS_GOAL'; payload: string }
+  | { type: 'SET_CURRENT_TRACKING_METHOD'; payload: string }
+  | { type: 'SET_NUTRITION_CHALLENGES'; payload: string[] }
+  | { type: 'SET_GOAL_IMPORTANCE'; payload: number }
   | { type: 'SET_AGE'; payload: number }
   | { type: 'SET_HEIGHT'; payload: { unit: 'ft' | 'cm'; ft?: number; in?: number; cm?: number } }
   | { type: 'SET_WEIGHT'; payload: { unit: 'lbs' | 'kg'; lbs?: number; kg?: number } }
+  | { type: 'SET_SEX'; payload: string }
+  | { type: 'SET_EXERCISE_FREQUENCY'; payload: string }
+  | { type: 'SET_EXERCISE_TYPE'; payload: string }
   | { type: 'SET_ACTIVITY_LEVEL'; payload: string }
-  | { type: 'SET_FITNESS_GOAL'; payload: string }
+  | { type: 'SET_DREAM_OUTCOME'; payload: string }
   | { type: 'SET_PROTEIN_GOALS'; payload: { goal: number; units: 'grams' | 'ounces' } }
   | { type: 'LOAD_DATA'; payload: Partial<OnboardingData> }
   | { type: 'CLEAR_DATA' };
@@ -50,10 +76,25 @@ const STORAGE_KEY = 'onboarding_data';
 
 function onboardingReducer(state: OnboardingState, action: OnboardingAction): OnboardingState {
   switch (action.type) {
-    case 'SET_SEX':
+    case 'SET_FITNESS_GOAL':
       return {
         ...state,
-        data: { ...state.data, sex: action.payload },
+        data: { ...state.data, fitnessGoal: action.payload },
+      };
+    case 'SET_CURRENT_TRACKING_METHOD':
+      return {
+        ...state,
+        data: { ...state.data, currentTrackingMethod: action.payload },
+      };
+    case 'SET_NUTRITION_CHALLENGES':
+      return {
+        ...state,
+        data: { ...state.data, nutritionChallenges: action.payload },
+      };
+    case 'SET_GOAL_IMPORTANCE':
+      return {
+        ...state,
+        data: { ...state.data, goalImportance: action.payload },
       };
     case 'SET_AGE':
       return {
@@ -81,15 +122,30 @@ function onboardingReducer(state: OnboardingState, action: OnboardingAction): On
           weightKg: action.payload.kg,
         },
       };
+    case 'SET_SEX':
+      return {
+        ...state,
+        data: { ...state.data, sex: action.payload },
+      };
+    case 'SET_EXERCISE_FREQUENCY':
+      return {
+        ...state,
+        data: { ...state.data, exerciseFrequency: action.payload },
+      };
+    case 'SET_EXERCISE_TYPE':
+      return {
+        ...state,
+        data: { ...state.data, exerciseType: action.payload },
+      };
     case 'SET_ACTIVITY_LEVEL':
       return {
         ...state,
         data: { ...state.data, activityLevel: action.payload },
       };
-    case 'SET_FITNESS_GOAL':
+    case 'SET_DREAM_OUTCOME':
       return {
         ...state,
-        data: { ...state.data, fitnessGoal: action.payload },
+        data: { ...state.data, dreamOutcome: action.payload },
       };
     case 'SET_PROTEIN_GOALS':
       return {
@@ -132,13 +188,26 @@ function isOnboardingComplete(data: Partial<OnboardingData>): boolean {
 
 interface OnboardingContextType {
   state: OnboardingState;
-  setSex: (sex: string) => void;
+  // Screen 1
+  setFitnessGoal: (goal: string) => void;
+  // Screens 2-4 (Psychology)
+  setCurrentTrackingMethod: (method: string) => void;
+  setNutritionChallenges: (challenges: string[]) => void;
+  setGoalImportance: (importance: number) => void;
+  // Screens 5-8 (Basic data)
   setAge: (age: number) => void;
   setHeight: (unit: 'ft' | 'cm', ft?: number, inches?: number, cm?: number) => void;
   setWeight: (unit: 'lbs' | 'kg', lbs?: number, kg?: number) => void;
-  setActivityLevel: (level: string) => void;
-  setFitnessGoal: (goal: string) => void;
+  setSex: (sex: string) => void;
+  // Screens 9-10 (Activity)
+  setExerciseFrequency: (frequency: string) => void;
+  setExerciseType: (type: string) => void;
+  setActivityLevel: (level: string) => void; // Keep for backward compatibility
+  // Screen 11
+  setDreamOutcome: (outcome: string) => void;
+  // Screen 12-13
   setProteinGoals: (goal: number, units: 'grams' | 'ounces') => void;
+  // Utility
   clearData: () => void;
   saveToStorage: () => Promise<void>;
   loadFromStorage: () => Promise<void>;
@@ -190,6 +259,30 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     dispatch({ type: 'SET_FITNESS_GOAL', payload: goal });
   };
 
+  const setCurrentTrackingMethod = (method: string) => {
+    dispatch({ type: 'SET_CURRENT_TRACKING_METHOD', payload: method });
+  };
+
+  const setNutritionChallenges = (challenges: string[]) => {
+    dispatch({ type: 'SET_NUTRITION_CHALLENGES', payload: challenges });
+  };
+
+  const setGoalImportance = (importance: number) => {
+    dispatch({ type: 'SET_GOAL_IMPORTANCE', payload: importance });
+  };
+
+  const setExerciseFrequency = (frequency: string) => {
+    dispatch({ type: 'SET_EXERCISE_FREQUENCY', payload: frequency });
+  };
+
+  const setExerciseType = (type: string) => {
+    dispatch({ type: 'SET_EXERCISE_TYPE', payload: type });
+  };
+
+  const setDreamOutcome = (outcome: string) => {
+    dispatch({ type: 'SET_DREAM_OUTCOME', payload: outcome });
+  };
+
   const setProteinGoals = (goal: number, units: 'grams' | 'ounces') => {
     dispatch({ type: 'SET_PROTEIN_GOALS', payload: { goal, units } });
   };
@@ -221,13 +314,26 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
 
   const value: OnboardingContextType = {
     state,
-    setSex,
+    // Screen 1
+    setFitnessGoal,
+    // Screens 2-4 (Psychology)
+    setCurrentTrackingMethod,
+    setNutritionChallenges,
+    setGoalImportance,
+    // Screens 5-8 (Basic data)
     setAge,
     setHeight,
     setWeight,
+    setSex,
+    // Screens 9-10 (Activity)
+    setExerciseFrequency,
+    setExerciseType,
     setActivityLevel,
-    setFitnessGoal,
+    // Screen 11
+    setDreamOutcome,
+    // Screen 12-13
     setProteinGoals,
+    // Utility
     clearData,
     saveToStorage,
     loadFromStorage,

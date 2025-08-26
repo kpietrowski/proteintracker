@@ -3,109 +3,132 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useOnboarding } from '../../context/OnboardingContext';
-import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
-export default function OnboardingScreen1() {
+export default function OnboardingScreen9() {
   const navigation = useNavigation();
-  const { state, setFitnessGoal } = useOnboarding();
-  const [selectedGoal, setSelectedGoal] = useState<string>(state.data.fitnessGoal || '');
+  const { state, setExerciseFrequency } = useOnboarding();
+  const [selectedFrequency, setSelectedFrequency] = useState<string>(() => {
+    return (state?.data?.exerciseFrequency) ? state.data.exerciseFrequency : '';
+  });
 
-  const goals = [
+  const exerciseFrequencies = [
     {
-      id: 'build-muscle',
-      text: 'Build muscle & strength',
-      icon: 'fitness-center',
-      iconLib: 'MaterialIcons',
+      id: 'no-exercise',
+      text: 'I don\'t exercise regularly',
+      icon: 'bed-outline',
+      iconLib: 'Ionicons',
     },
     {
-      id: 'lose-weight',
-      text: 'Lose weight (preserve muscle)',
-      icon: 'balance-scale',
-      iconLib: 'FontAwesome5',
-    },
-    {
-      id: 'athletic-performance',
-      text: 'Improve athletic performance',
+      id: '1-2-times',
+      text: '1-2 times per week',
       icon: 'walk',
       iconLib: 'Ionicons',
     },
     {
-      id: 'general-health',
-      text: 'General health & wellness',
-      icon: 'heart',
+      id: '3-4-times',
+      text: '3-4 times per week',
+      icon: 'fitness',
       iconLib: 'Ionicons',
     },
     {
-      id: 'medical',
-      text: 'Medical recommendation',
-      icon: 'medical',
+      id: '5-6-times',
+      text: '5-6 times per week',
+      icon: 'barbell',
+      iconLib: 'Ionicons',
+    },
+    {
+      id: 'daily',
+      text: 'Daily (7+ times per week)',
+      icon: 'trophy',
       iconLib: 'Ionicons',
     },
   ];
 
   useEffect(() => {
-    setSelectedGoal(state.data.fitnessGoal || '');
-  }, [state.data.fitnessGoal]);
+    const exerciseFrequency = state?.data?.exerciseFrequency;
+    setSelectedFrequency(exerciseFrequency || '');
+  }, [state?.data?.exerciseFrequency]);
 
   const handleNext = () => {
-    if (selectedGoal) {
-      setFitnessGoal(selectedGoal);
-      // Navigate to Screen 2 - Current Tracking Method
-      navigation.navigate('CurrentTracking' as never);
+    if (selectedFrequency) {
+      setExerciseFrequency(selectedFrequency);
+      // If user doesn't exercise regularly, skip to Screen 11 (Dream Outcome)
+      if (selectedFrequency === 'I don\'t exercise regularly') {
+        navigation.navigate('DreamOutcome' as never);
+      } else {
+        navigation.navigate('ExerciseType' as never);
+      }
     }
   };
 
-  const renderIcon = (goal: any) => {
-    const IconComponent = goal.iconLib === 'MaterialIcons' ? MaterialIcons :
-                         goal.iconLib === 'FontAwesome5' ? FontAwesome5 : Ionicons;
-    
+  const handleBack = () => {
+    navigation.goBack();
+  };
+
+  const renderIcon = (frequency: any) => {
     return (
-      <IconComponent 
-        name={goal.icon} 
+      <Ionicons 
+        name={frequency.icon} 
         size={24} 
-        color={selectedGoal === goal.text ? '#007AFF' : '#6B6B6B'} 
+        color={(selectedFrequency && selectedFrequency === frequency.text) ? '#007AFF' : '#6B6B6B'} 
       />
     );
   };
+
+  // Early return if state is not ready
+  if (!state) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <Text>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
         <View style={styles.progressHeader}>
-          <Text style={styles.progressText}>Step 1 of 13</Text>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={24} color="#007AFF" />
+          </TouchableOpacity>
+          <Text style={styles.progressText}>Step 9 of 13</Text>
+          <View style={styles.backButton} />
         </View>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '7.7%' }]} />
+          <View style={[styles.progressFill, { width: '69.2%' }]} />
         </View>
       </View>
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.title}>What's your main goal with protein tracking?</Text>
+        <Text style={styles.title}>How often do you exercise?</Text>
         <Text style={styles.subtitle}>
-          This helps us create your personalized protein recommendation.
+          This helps us calculate your daily protein needs accurately.
         </Text>
 
         <View style={styles.optionsContainer}>
-          {goals.map((goal, index) => (
+          {exerciseFrequencies.map((frequency) => (
             <TouchableOpacity
-              key={goal.id}
+              key={frequency.id}
               style={[
                 styles.optionCard,
-                selectedGoal === goal.text && styles.optionCardSelected,
+                (selectedFrequency && selectedFrequency === frequency.text) && styles.optionCardSelected,
               ]}
-              onPress={() => setSelectedGoal(goal.text)}
+              onPress={() => setSelectedFrequency(frequency.text)}
             >
               <View style={styles.optionContent}>
-                {renderIcon(goal)}
+                {renderIcon(frequency)}
                 <Text
                   style={[
                     styles.optionText,
-                    selectedGoal === goal.text && styles.optionTextSelected,
+                    (selectedFrequency && selectedFrequency === frequency.text) && styles.optionTextSelected,
                   ]}
                 >
-                  {goal.text}
+                  {frequency.text}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -115,9 +138,9 @@ export default function OnboardingScreen1() {
 
       {/* Next Button */}
       <TouchableOpacity
-        style={[styles.nextButton, !selectedGoal && styles.nextButtonDisabled]}
+        style={[styles.nextButton, (!selectedFrequency || selectedFrequency.length === 0) && styles.nextButtonDisabled]}
         onPress={handleNext}
-        disabled={!selectedGoal}
+        disabled={!selectedFrequency || selectedFrequency.length === 0}
       >
         <Text style={styles.nextButtonText}>Next</Text>
       </TouchableOpacity>
@@ -136,7 +159,23 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 8,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   progressText: {
     fontSize: 14,
@@ -187,7 +226,6 @@ const styles = StyleSheet.create({
   optionContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 12,
   },
   optionCardSelected: {
@@ -198,7 +236,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#1A1A1A',
-    textAlign: 'center',
+    flex: 1,
   },
   optionTextSelected: {
     color: '#007AFF',

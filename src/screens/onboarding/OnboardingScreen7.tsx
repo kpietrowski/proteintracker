@@ -24,7 +24,37 @@ export default function OnboardingScreen7() {
     console.log('OnboardingScreen7 - Current state data:', JSON.stringify(state.data, null, 2));
     initializeSuperwall();
     calculateProteinNeeds();
-  }, [state.data]);
+    
+    // Set up Superwall event listeners for purchase completion
+    const setupSuperwallListeners = () => {
+      // Listen for successful purchases
+      Superwall.shared.delegate = {
+        onPurchaseSuccessful: (purchaseInfo: any) => {
+          console.log('🎉 Purchase successful!', purchaseInfo);
+          // Navigate to phone auth on successful purchase
+          navigation.navigate('PhoneAuth' as never);
+        },
+        onPurchaseFailed: (error: any) => {
+          console.log('❌ Purchase failed:', error);
+          // Stay on current screen
+        },
+        onSuperwallEvent: (event: any) => {
+          console.log('📊 Superwall event:', event);
+          if (event.type === 'transaction_complete' && event.result === 'purchased') {
+            console.log('🎯 Transaction completed successfully');
+            navigation.navigate('PhoneAuth' as never);
+          }
+        }
+      };
+    };
+    
+    setupSuperwallListeners();
+    
+    // Cleanup listeners on unmount
+    return () => {
+      Superwall.shared.delegate = null;
+    };
+  }, [state.data, navigation]);
 
   const initializeSuperwall = async () => {
     try {
@@ -96,60 +126,21 @@ export default function OnboardingScreen7() {
     console.log('🔓 Protein goal:', calculation?.dailyProtein || 150);
     
     try {
-      // Use the correct Superwall.shared.register syntax with object parameters
-      await Superwall.shared.register({
-        placement: 'onboarding_complete',
-        params: {
-          protein_goal: calculation?.dailyProtein || 150,
-          trigger_source: 'unlock_goal_button',
-          user_type: 'new_user',
-          goal_blurred: true
-        },
-        handler: {
-          onPresent: (info: any) => {
-            console.log('🎉 Paywall presented!', info);
-          },
-          onDismiss: (info: any) => {
-            console.log('👋 Paywall dismissed', info);
-          },
-          onError: (error: any) => {
-            console.error('❌ Paywall presentation error:', error);
-          },
-          onSkip: (reason: any) => {
-            console.log('⏭️ Paywall skipped:', reason);
-          }
-        },
-        feature: () => {
-          console.log('🔄 No paywall shown - proceeding to phone auth');
-          navigation.navigate('PhoneAuth' as never);
-        }
+      // Simply trigger the paywall - navigation will be handled by delegate events
+      await Superwall.register('onboarding_complete', {
+        protein_goal: calculation?.dailyProtein || 150,
+        trigger_source: 'unlock_goal_button',
+        user_type: 'new_user',
+        goal_blurred: true
       });
       
-      console.log('✅ Paywall trigger completed');
+      console.log('✅ Paywall triggered - waiting for user action');
+      // Navigation will be handled by the delegate callbacks based on user action
+      
     } catch (error) {
       console.error('❌ Paywall failed to show:', error);
       console.error('Full error details:', JSON.stringify(error, null, 2));
-      // Fallback to phone auth
-      setTimeout(() => {
-        navigation.navigate('PhoneAuth' as never);
-      }, 1000);
-      
-      // Try alternative Superwall syntax
-      try {
-        console.log('🔄 Trying alternative Superwall syntax...');
-        await Superwall.register('onboarding_complete', {
-          protein_goal: calculation?.dailyProtein || 150,
-          trigger_source: 'unlock_goal_button',
-          user_type: 'new_user',
-          goal_blurred: true
-        });
-        console.log('✅ Alternative syntax worked');
-      } catch (altError) {
-        console.error('❌ Alternative syntax also failed:', altError);
-        // Fallback: navigate to manual subscription screen
-        console.log('🟢 Navigating to Paywall screen as fallback');
-        navigation.navigate('Paywall' as never);
-      }
+      console.log('🚫 Staying on current screen - paywall could not be displayed');
     }
   };
 

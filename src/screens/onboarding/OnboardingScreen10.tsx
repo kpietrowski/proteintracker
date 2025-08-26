@@ -3,109 +3,141 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useOnboarding } from '../../context/OnboardingContext';
-import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
-export default function OnboardingScreen1() {
+export default function OnboardingScreen10() {
   const navigation = useNavigation();
-  const { state, setFitnessGoal } = useOnboarding();
-  const [selectedGoal, setSelectedGoal] = useState<string>(state.data.fitnessGoal || '');
+  const { state, setExerciseType } = useOnboarding();
+  const [selectedType, setSelectedType] = useState<string>(() => {
+    return (state?.data?.exerciseType) ? state.data.exerciseType : '';
+  });
 
-  const goals = [
+  const exerciseTypes = [
     {
-      id: 'build-muscle',
-      text: 'Build muscle & strength',
-      icon: 'fitness-center',
-      iconLib: 'MaterialIcons',
-    },
-    {
-      id: 'lose-weight',
-      text: 'Lose weight (preserve muscle)',
-      icon: 'balance-scale',
-      iconLib: 'FontAwesome5',
-    },
-    {
-      id: 'athletic-performance',
-      text: 'Improve athletic performance',
-      icon: 'walk',
+      id: 'strength-training',
+      text: 'Strength training / Weightlifting',
+      icon: 'barbell',
       iconLib: 'Ionicons',
     },
     {
-      id: 'general-health',
-      text: 'General health & wellness',
+      id: 'cardio',
+      text: 'Cardio (running, cycling, swimming)',
       icon: 'heart',
       iconLib: 'Ionicons',
     },
     {
-      id: 'medical',
-      text: 'Medical recommendation',
-      icon: 'medical',
+      id: 'sports',
+      text: 'Sports (basketball, soccer, tennis, etc.)',
+      icon: 'basketball',
+      iconLib: 'Ionicons',
+    },
+    {
+      id: 'yoga-pilates',
+      text: 'Yoga / Pilates / Stretching',
+      icon: 'body',
+      iconLib: 'Ionicons',
+    },
+    {
+      id: 'hiit',
+      text: 'High-intensity workouts (CrossFit, HIIT)',
+      icon: 'flash',
+      iconLib: 'Ionicons',
+    },
+    {
+      id: 'walking',
+      text: 'Walking / Light activity',
+      icon: 'walk',
+      iconLib: 'Ionicons',
+    },
+    {
+      id: 'mixed',
+      text: 'Mixed - I do different types',
+      icon: 'shuffle',
       iconLib: 'Ionicons',
     },
   ];
 
   useEffect(() => {
-    setSelectedGoal(state.data.fitnessGoal || '');
-  }, [state.data.fitnessGoal]);
+    const exerciseType = state?.data?.exerciseType;
+    setSelectedType(exerciseType || '');
+  }, [state?.data?.exerciseType]);
 
   const handleNext = () => {
-    if (selectedGoal) {
-      setFitnessGoal(selectedGoal);
-      // Navigate to Screen 2 - Current Tracking Method
-      navigation.navigate('CurrentTracking' as never);
+    if (selectedType) {
+      setExerciseType(selectedType);
+      navigation.navigate('DreamOutcome' as never);
     }
   };
 
-  const renderIcon = (goal: any) => {
-    const IconComponent = goal.iconLib === 'MaterialIcons' ? MaterialIcons :
-                         goal.iconLib === 'FontAwesome5' ? FontAwesome5 : Ionicons;
+  const handleBack = () => {
+    navigation.goBack();
+  };
+
+  const renderIcon = (type: any) => {
+    const IconComponent = type.iconLib === 'MaterialIcons' ? MaterialIcons : Ionicons;
     
     return (
       <IconComponent 
-        name={goal.icon} 
+        name={type.icon} 
         size={24} 
-        color={selectedGoal === goal.text ? '#007AFF' : '#6B6B6B'} 
+        color={(selectedType && selectedType === type.text) ? '#007AFF' : '#6B6B6B'} 
       />
     );
   };
+
+  // Early return if state is not ready
+  if (!state) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.content}>
+          <Text>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
         <View style={styles.progressHeader}>
-          <Text style={styles.progressText}>Step 1 of 13</Text>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={24} color="#007AFF" />
+          </TouchableOpacity>
+          <Text style={styles.progressText}>Step 10 of 13</Text>
+          <View style={styles.backButton} />
         </View>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '7.7%' }]} />
+          <View style={[styles.progressFill, { width: '76.9%' }]} />
         </View>
       </View>
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.title}>What's your main goal with protein tracking?</Text>
+        <Text style={styles.title}>What type of exercise do you do most?</Text>
         <Text style={styles.subtitle}>
-          This helps us create your personalized protein recommendation.
+          Understanding your exercise type helps us fine-tune your protein recommendations.
         </Text>
 
         <View style={styles.optionsContainer}>
-          {goals.map((goal, index) => (
+          {exerciseTypes.map((type) => (
             <TouchableOpacity
-              key={goal.id}
+              key={type.id}
               style={[
                 styles.optionCard,
-                selectedGoal === goal.text && styles.optionCardSelected,
+                (selectedType && selectedType === type.text) && styles.optionCardSelected,
               ]}
-              onPress={() => setSelectedGoal(goal.text)}
+              onPress={() => setSelectedType(type.text)}
             >
               <View style={styles.optionContent}>
-                {renderIcon(goal)}
+                {renderIcon(type)}
                 <Text
                   style={[
                     styles.optionText,
-                    selectedGoal === goal.text && styles.optionTextSelected,
+                    (selectedType && selectedType === type.text) && styles.optionTextSelected,
                   ]}
                 >
-                  {goal.text}
+                  {type.text}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -115,9 +147,9 @@ export default function OnboardingScreen1() {
 
       {/* Next Button */}
       <TouchableOpacity
-        style={[styles.nextButton, !selectedGoal && styles.nextButtonDisabled]}
+        style={[styles.nextButton, (!selectedType || selectedType.length === 0) && styles.nextButtonDisabled]}
         onPress={handleNext}
-        disabled={!selectedGoal}
+        disabled={!selectedType || selectedType.length === 0}
       >
         <Text style={styles.nextButtonText}>Next</Text>
       </TouchableOpacity>
@@ -136,7 +168,23 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 8,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   progressText: {
     fontSize: 14,
@@ -187,7 +235,6 @@ const styles = StyleSheet.create({
   optionContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 12,
   },
   optionCardSelected: {
@@ -198,7 +245,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#1A1A1A',
-    textAlign: 'center',
+    flex: 1,
   },
   optionTextSelected: {
     color: '#007AFF',

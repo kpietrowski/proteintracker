@@ -162,7 +162,7 @@ export default function VoiceInputModal() {
   return (
     <View style={styles.container}>
       <Pressable style={styles.backdrop} onPress={handleClose} />
-      <View style={styles.modalContent}>
+      <SafeAreaView style={styles.modalContent}>
         <View style={styles.handle} />
         <View style={styles.header}>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
@@ -186,29 +186,31 @@ export default function VoiceInputModal() {
               </View>
             </View>
 
-            <TouchableOpacity
-              onPress={handleMicPress}
-              disabled={isProcessing}
-              style={styles.micContainer}
-            >
-              <Animated.View
-                style={[
-                  styles.micButton,
-                  { transform: [{ scale: pulseAnim }] },
-                  isRecording && styles.micButtonRecording,
-                ]}
+            <View style={styles.micSection}>
+              <TouchableOpacity
+                onPress={handleMicPress}
+                disabled={isProcessing}
+                style={styles.micContainer}
               >
-                {isProcessing ? (
-                  <ActivityIndicator size="large" color={colors.text.white} />
-                ) : (
-                  <Text style={styles.micIcon}>🎤</Text>
-                )}
-              </Animated.View>
-            </TouchableOpacity>
+                <Animated.View
+                  style={[
+                    styles.micButton,
+                    { transform: [{ scale: pulseAnim }] },
+                    isRecording && styles.micButtonRecording,
+                  ]}
+                >
+                  {isProcessing ? (
+                    <ActivityIndicator size="large" color={colors.text.white} />
+                  ) : (
+                    <Text style={styles.micIcon}>🎤</Text>
+                  )}
+                </Animated.View>
+              </TouchableOpacity>
 
-            <Text style={styles.statusText}>
-              {isRecording ? 'Listening...' : isProcessing ? 'Processing...' : 'Tap to speak'}
-            </Text>
+              <Text style={styles.statusText}>
+                {isRecording ? 'Listening...' : isProcessing ? 'Processing...' : 'Tap to speak'}
+              </Text>
+            </View>
           </>
         ) : (
           <View style={styles.resultContainer}>
@@ -274,7 +276,7 @@ export default function VoiceInputModal() {
           </View>
         )}
       </View>
-      </View>
+      </SafeAreaView>
     </View>
   );
 }
@@ -296,8 +298,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.main,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: 20,
-    maxHeight: '80%',
+    paddingBottom: 30,
+    height: '55%',
   },
   handle: {
     width: 40,
@@ -329,35 +331,47 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     paddingTop: 10,
+    paddingBottom: 20,
   },
   instructionContainer: {
-    marginBottom: 50,
+    alignItems: 'center',
+    width: '100%',
   },
   instruction: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '600',
     color: colors.text.primary,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
   },
   exampleContainer: {
     backgroundColor: colors.background.white,
-    padding: 20,
-    borderRadius: 15,
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   example: {
-    fontSize: 16,
+    fontSize: 15,
     color: colors.text.secondary,
     textAlign: 'center',
-    marginVertical: 5,
+    marginVertical: 3,
     fontStyle: 'italic',
   },
+  micSection: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   micContainer: {
-    marginVertical: 40,
+    marginBottom: 12,
   },
   micButton: {
     width: 120,
@@ -379,9 +393,10 @@ const styles = StyleSheet.create({
     fontSize: 50,
   },
   statusText: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '500',
     color: colors.text.secondary,
-    marginTop: 20,
+    textAlign: 'center',
   },
   resultContainer: {
     width: '100%',

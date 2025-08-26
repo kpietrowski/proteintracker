@@ -44,10 +44,10 @@
     },
     "extra": {
       "OPENAI_API_KEY": "your-openai-api-key-here",
-      "SUPABASE_URL": "your-supabase-url-here",
+      "SUPABASE_URL": "your-supabase-url-here", 
       "SUPABASE_ANON_KEY": "your-supabase-anon-key-here",
       "REVENUECAT_API_KEY_IOS": "your-revenuecat-ios-key-here",
-      "REVENUECAT_API_KEY_ANDROID": "your-revenuecat-android-key-here",
+      "REVENUECAT_API_KEY_ANDROID": "your-revenuecat-android-key-here", 
       "SUPERWALL_API_KEY": "your-superwall-api-key-here",
       "APP_ENV": "development",
       "eas": {
