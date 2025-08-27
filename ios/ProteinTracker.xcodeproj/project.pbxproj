@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		053E47B564326C4D7B595D50 /* libPods-ProteinTracker.a in Frameworks */ = {isa = PBXBuildFile; fileRef = ED54D7CCAE92BD478927F527 /* libPods-ProteinTracker.a */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		B503DC21220B3304742946D5 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 958D65EC0B8E604F2AE66E84 /* ExpoModulesProvider.swift */; };
+		7356DFECE5099B5A2F7B15DD /* libPods-ProteinTracker.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 22A5343E2A1C2CEC4C18AE23 /* libPods-ProteinTracker.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		CA8C028F1A5AB723D19AEECF /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 2DEB6B40F1280AFD5CB13FB5 /* PrivacyInfo.xcprivacy */; };
+		C25655C2E46F7A797249326F /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7FABBA3E9C5EA1AA974A526 /* ExpoModulesProvider.swift */; };
+		ED8671FCF0CA4FE473C6EA7A /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 1E105DA595B99C4738867FFE /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
 
@@ -20,16 +20,16 @@
 		13B07F961A680F5B00A75B9A /* ProteinTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProteinTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = ProteinTracker/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = ProteinTracker/Info.plist; sourceTree = "<group>"; };
-		2DEB6B40F1280AFD5CB13FB5 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = ProteinTracker/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		420532806026ECB1D6510BDE /* Pods-ProteinTracker.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ProteinTracker.release.xcconfig"; path = "Target Support Files/Pods-ProteinTracker/Pods-ProteinTracker.release.xcconfig"; sourceTree = "<group>"; };
-		958D65EC0B8E604F2AE66E84 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-ProteinTracker/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		A058EED5EF5F4D3A69FA9261 /* Pods-ProteinTracker.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ProteinTracker.debug.xcconfig"; path = "Target Support Files/Pods-ProteinTracker/Pods-ProteinTracker.debug.xcconfig"; sourceTree = "<group>"; };
+		1E105DA595B99C4738867FFE /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = ProteinTracker/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		22A5343E2A1C2CEC4C18AE23 /* libPods-ProteinTracker.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ProteinTracker.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		6B4B596BF1DA6E27E497F340 /* Pods-ProteinTracker.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ProteinTracker.debug.xcconfig"; path = "Target Support Files/Pods-ProteinTracker/Pods-ProteinTracker.debug.xcconfig"; sourceTree = "<group>"; };
+		A7FABBA3E9C5EA1AA974A526 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-ProteinTracker/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = ProteinTracker/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		ED54D7CCAE92BD478927F527 /* libPods-ProteinTracker.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ProteinTracker.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = ProteinTracker/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* ProteinTracker-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "ProteinTracker-Bridging-Header.h"; path = "ProteinTracker/ProteinTracker-Bridging-Header.h"; sourceTree = "<group>"; };
+		FB957C1B1D2E0109FC4FB274 /* Pods-ProteinTracker.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ProteinTracker.release.xcconfig"; path = "Target Support Files/Pods-ProteinTracker/Pods-ProteinTracker.release.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,21 +37,13 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				053E47B564326C4D7B595D50 /* libPods-ProteinTracker.a in Frameworks */,
+				7356DFECE5099B5A2F7B15DD /* libPods-ProteinTracker.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		01A73DBC821F0ABF280AE751 /* ProteinTracker */ = {
-			isa = PBXGroup;
-			children = (
-				958D65EC0B8E604F2AE66E84 /* ExpoModulesProvider.swift */,
-			);
-			name = ProteinTracker;
-			sourceTree = "<group>";
-		};
 		13B07FAE1A68108700A75B9A /* ProteinTracker */ = {
 			isa = PBXGroup;
 			children = (
@@ -61,7 +53,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				2DEB6B40F1280AFD5CB13FB5 /* PrivacyInfo.xcprivacy */,
+				1E105DA595B99C4738867FFE /* PrivacyInfo.xcprivacy */,
 			);
 			name = ProteinTracker;
 			sourceTree = "<group>";
@@ -70,19 +62,17 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				ED54D7CCAE92BD478927F527 /* libPods-ProteinTracker.a */,
+				22A5343E2A1C2CEC4C18AE23 /* libPods-ProteinTracker.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		378B36B7785FFFDE55E2F5F8 /* Pods */ = {
+		8223B10C48D5B75DDB7F40D8 /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				A058EED5EF5F4D3A69FA9261 /* Pods-ProteinTracker.debug.xcconfig */,
-				420532806026ECB1D6510BDE /* Pods-ProteinTracker.release.xcconfig */,
+				C6F7E0E0DE2FD7A7EA74E97D /* ProteinTracker */,
 			);
-			name = Pods;
-			path = Pods;
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -99,8 +89,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				378B36B7785FFFDE55E2F5F8 /* Pods */,
-				8EC576B0073E999CF1C2244A /* ExpoModulesProviders */,
+				CBD42F871D11AF5B5B69405D /* Pods */,
+				8223B10C48D5B75DDB7F40D8 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -115,14 +105,6 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		8EC576B0073E999CF1C2244A /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				01A73DBC821F0ABF280AE751 /* ProteinTracker */,
-			);
-			name = ExpoModulesProviders;
-			sourceTree = "<group>";
-		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
 			isa = PBXGroup;
 			children = (
@@ -130,6 +112,24 @@
 			);
 			name = Supporting;
 			path = ProteinTracker/Supporting;
+			sourceTree = "<group>";
+		};
+		C6F7E0E0DE2FD7A7EA74E97D /* ProteinTracker */ = {
+			isa = PBXGroup;
+			children = (
+				A7FABBA3E9C5EA1AA974A526 /* ExpoModulesProvider.swift */,
+			);
+			name = ProteinTracker;
+			sourceTree = "<group>";
+		};
+		CBD42F871D11AF5B5B69405D /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				6B4B596BF1DA6E27E497F340 /* Pods-ProteinTracker.debug.xcconfig */,
+				FB957C1B1D2E0109FC4FB274 /* Pods-ProteinTracker.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -140,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "ProteinTracker" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				F0DA6BFA23BD245A134A4A9E /* [Expo] Configure project */,
+				A1723019C9BB96967802E20D /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				5AF501A5591683D8FB007EFA /* [CP] Embed Pods Frameworks */,
+				1706C08529DBF36E781BADA4 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -196,7 +196,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				CA8C028F1A5AB723D19AEECF /* PrivacyInfo.xcprivacy in Resources */,
+				ED8671FCF0CA4FE473C6EA7A /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -240,7 +240,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		5AF501A5591683D8FB007EFA /* [CP] Embed Pods Frameworks */ = {
+		1706C08529DBF36E781BADA4 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -304,7 +304,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ProteinTracker/Pods-ProteinTracker-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		F0DA6BFA23BD245A134A4A9E /* [Expo] Configure project */ = {
+		A1723019C9BB96967802E20D /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -331,7 +331,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				B503DC21220B3304742946D5 /* ExpoModulesProvider.swift in Sources */,
+				C25655C2E46F7A797249326F /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -340,7 +340,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A058EED5EF5F4D3A69FA9261 /* Pods-ProteinTracker.debug.xcconfig */;
+			baseConfigurationReference = 6B4B596BF1DA6E27E497F340 /* Pods-ProteinTracker.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -376,7 +376,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 420532806026ECB1D6510BDE /* Pods-ProteinTracker.release.xcconfig */;
+			baseConfigurationReference = FB957C1B1D2E0109FC4FB274 /* Pods-ProteinTracker.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;

@@ -9,6 +9,7 @@ import {
   Alert,
   Animated,
   Pressable,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -17,12 +18,14 @@ import { whisperService } from '../services/whisper';
 import { supabase, addProteinEntry } from '../services/supabase';
 import { colors } from '../constants/colors';
 import { VoiceInputResult } from '../types';
+import { hapticFeedback } from '../utils/haptics';
 
 export default function VoiceInputModal() {
   const navigation = useNavigation();
   const [isRecording, setIsRecording] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<VoiceInputResult | null>(null);
+  const [adjustedProtein, setAdjustedProtein] = useState<number | null>(null);
   const [pulseAnim] = useState(new Animated.Value(1));
 
   useEffect(() => {
@@ -56,8 +59,10 @@ export default function VoiceInputModal() {
 
   const handleMicPress = async () => {
     if (isRecording) {
+      hapticFeedback.light();  // Light haptic when stopping
       await stopRecording();
     } else {
+      hapticFeedback.medium();  // Medium haptic when starting
       await startRecording();
     }
   };
@@ -85,6 +90,7 @@ export default function VoiceInputModal() {
       // Process with Whisper and GPT
       const result = await whisperService.processVoiceInput();
       setResult(result);
+      setAdjustedProtein(result?.proteinAmount || null);
       
     } catch (error) {
       console.error('Failed to process recording:', error);
@@ -94,8 +100,17 @@ export default function VoiceInputModal() {
     }
   };
 
+  const adjustProtein = (amount: number) => {
+    if (!adjustedProtein) return;
+    const newAmount = Math.max(1, adjustedProtein + amount);
+    setAdjustedProtein(newAmount);
+    hapticFeedback.selection();
+  };
+
   const handleApprove = async () => {
-    if (!result || !result.proteinAmount) return;
+    if (!result || !adjustedProtein) return;
+    
+    hapticFeedback.success();  // Success haptic when approving
 
     try {
       setIsProcessing(true);
@@ -119,7 +134,7 @@ export default function VoiceInputModal() {
         
         // Add new entry
         todayEntries.push({
-          amount: result.proteinAmount,
+          amount: adjustedProtein,
           description: result.foodItem || result.transcript,
           timestamp: new Date().toISOString(),
           source: 'voice'
@@ -136,7 +151,7 @@ export default function VoiceInputModal() {
       await addProteinEntry({
         userId: user.id,
         date: new Date(),
-        amount: result.proteinAmount,
+        amount: adjustedProtein,
         description: result.foodItem || result.transcript,
         source: 'voice',
       });
@@ -152,27 +167,33 @@ export default function VoiceInputModal() {
   };
 
   const handleCancel = () => {
+    hapticFeedback.light();  // Light haptic when canceling
     setResult(null);
+    setAdjustedProtein(null);
   };
 
   const handleClose = () => {
+    hapticFeedback.selection();  // Selection haptic when closing
     navigation.goBack();
   };
 
   return (
     <View style={styles.container}>
       <Pressable style={styles.backdrop} onPress={handleClose} />
-      <SafeAreaView style={styles.modalContent}>
-        <View style={styles.handle} />
+      <View style={styles.modalContent}>
         <View style={styles.header}>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Text style={styles.closeText}>✕</Text>
           </TouchableOpacity>
-          <Text style={styles.title}>Log Protein with Voice</Text>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Protein AI</Text>
+            <Text style={styles.subtitle}>AI-powered protein tracking</Text>
+          </View>
+          <View style={{ width: 30 }} />
         </View>
 
-      <View style={styles.content}>
-        {!result ? (
+        <View style={styles.content}>
+          {!result ? (
           <>
             <View style={styles.instructionContainer}>
               <Text style={styles.instruction}>
@@ -219,9 +240,25 @@ export default function VoiceInputModal() {
 
             {result.proteinAmount ? (
               <>
-                <View style={styles.proteinResult}>
-                  <Text style={styles.proteinAmount}>{result.proteinAmount}g</Text>
-                  <Text style={styles.proteinLabel}>protein</Text>
+                <View style={styles.proteinAdjuster}>
+                  <TouchableOpacity 
+                    style={styles.adjustButton}
+                    onPress={() => adjustProtein(-1)}
+                  >
+                    <Text style={styles.adjustButtonText}>−</Text>
+                  </TouchableOpacity>
+                  
+                  <View style={styles.proteinResult}>
+                    <Text style={styles.proteinAmount}>{adjustedProtein}</Text>
+                    <Text style={styles.proteinLabel}>grams</Text>
+                  </View>
+                  
+                  <TouchableOpacity 
+                    style={styles.adjustButton}
+                    onPress={() => adjustProtein(1)}
+                  >
+                    <Text style={styles.adjustButtonText}>+</Text>
+                  </TouchableOpacity>
                 </View>
                 
                 {result.foodItem && (
@@ -237,26 +274,27 @@ export default function VoiceInputModal() {
 
                 <View style={styles.buttonContainer}>
                   <TouchableOpacity
-                    style={styles.cancelButton}
-                    onPress={handleCancel}
-                  >
-                    <Text style={styles.cancelButtonText}>Try Again</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
                     onPress={handleApprove}
                     disabled={isProcessing}
+                    style={styles.approveButtonWrapper}
                   >
                     <LinearGradient
                       colors={colors.gradients.successButton}
-                      style={styles.approveButton}
+                      style={styles.largeApproveButton}
                     >
                       {isProcessing ? (
-                        <ActivityIndicator color={colors.text.white} />
+                        <ActivityIndicator color={colors.text.white} size="large" />
                       ) : (
-                        <Text style={styles.approveButtonText}>Log It!</Text>
+                        <Text style={styles.largeApproveButtonText}>Log It!</Text>
                       )}
                     </LinearGradient>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={styles.tryAgainLink}
+                    onPress={handleCancel}
+                  >
+                    <Text style={styles.tryAgainLinkText}>Try again</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -275,8 +313,8 @@ export default function VoiceInputModal() {
             )}
           </View>
         )}
+        </View>
       </View>
-      </SafeAreaView>
     </View>
   );
 }
@@ -298,8 +336,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.main,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: 30,
-    height: '55%',
+    paddingBottom: 20,
+    paddingTop: 0,
+    height: '70%',
   },
   handle: {
     width: 40,
@@ -307,14 +346,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.text.light,
     borderRadius: 2,
     alignSelf: 'center',
-    marginTop: 12,
-    marginBottom: 10,
+    marginTop: 10,
+    marginBottom: 8,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingTop: 15,
+    paddingBottom: 8,
   },
   closeButton: {
     padding: 5,
@@ -324,59 +365,72 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: colors.text.primary,
-    marginLeft: 20,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: colors.text.secondary,
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center',
   },
   content: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 20,
   },
   instructionContainer: {
     alignItems: 'center',
     width: '100%',
+    marginTop: 30,
   },
   instruction: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '600',
     color: colors.text.primary,
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   exampleContainer: {
-    backgroundColor: colors.background.white,
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
+    backgroundColor: '#FAFBFC',
+    padding: 20,
+    borderRadius: 16,
+    marginTop: 12,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#F0F2F5',
+    shadowColor: '#4A5568',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    elevation: 8,
   },
   example: {
     fontSize: 15,
-    color: colors.text.secondary,
+    color: '#4A5568',
     textAlign: 'center',
-    marginVertical: 3,
-    fontStyle: 'italic',
+    marginVertical: 6,
+    fontWeight: '500',
+    letterSpacing: 0.2,
+    lineHeight: 20,
   },
   micSection: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 25,
   },
   micContainer: {
-    marginBottom: 12,
+    marginBottom: 8,
   },
   micButton: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: colors.primary.teal,
     justifyContent: 'center',
     alignItems: 'center',
@@ -390,10 +444,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.secondary.orange,
   },
   micIcon: {
-    fontSize: 50,
+    fontSize: 40,
   },
   statusText: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '500',
     color: colors.text.secondary,
     textAlign: 'center',
@@ -401,40 +455,76 @@ const styles = StyleSheet.create({
   resultContainer: {
     width: '100%',
     alignItems: 'center',
+    marginTop: 30,
   },
   resultTitle: {
-    fontSize: 16,
+    fontSize: 15,
     color: colors.text.secondary,
-    marginBottom: 10,
+    marginBottom: 8,
   },
   transcript: {
-    fontSize: 18,
+    fontSize: 16,
     color: colors.text.primary,
     fontStyle: 'italic',
-    marginBottom: 30,
+    marginBottom: 20,
     textAlign: 'center',
+  },
+  proteinAdjuster: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    gap: 10,
+  },
+  adjustButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 16,
+    backgroundColor: colors.background.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#E8F5E8',
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  adjustButtonText: {
+    fontSize: 28,
+    fontWeight: '300',
+    color: '#4CAF50',
+    includeFontPadding: false,
+    textAlignVertical: 'center',
   },
   proteinResult: {
     alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'center',
+    width: 180,
   },
   proteinAmount: {
-    fontSize: 64,
+    fontSize: 84,
     fontWeight: 'bold',
     color: colors.primary.teal,
+    lineHeight: 84,
+    minWidth: 160,
+    textAlign: 'center',
   },
   proteinLabel: {
-    fontSize: 24,
+    fontSize: 32,
     color: colors.text.secondary,
+    marginTop: -12,
+    fontWeight: '500',
   },
   foodItem: {
-    fontSize: 18,
+    fontSize: 16,
     color: colors.text.primary,
-    marginBottom: 20,
+    marginBottom: 15,
   },
   confidenceContainer: {
     flexDirection: 'row',
-    marginBottom: 30,
+    marginBottom: 20,
   },
   confidenceLabel: {
     fontSize: 14,
@@ -446,30 +536,40 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   buttonContainer: {
-    flexDirection: 'row',
-    gap: 20,
+    alignItems: 'center',
+    marginTop: 25,
+    width: '100%',
+    paddingHorizontal: 20,
   },
-  cancelButton: {
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-    borderWidth: 2,
-    borderColor: colors.text.secondary,
+  approveButtonWrapper: {
+    width: '80%',
+    marginBottom: 15,
   },
-  cancelButtonText: {
-    fontSize: 16,
-    color: colors.text.secondary,
-    fontWeight: '600',
-  },
-  approveButton: {
-    paddingVertical: 15,
+  largeApproveButton: {
+    paddingVertical: 20,
     paddingHorizontal: 40,
-    borderRadius: 25,
+    borderRadius: 30,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  approveButtonText: {
-    fontSize: 16,
+  largeApproveButtonText: {
+    fontSize: 22,
     color: colors.text.white,
-    fontWeight: '600',
+    fontWeight: '700',
+  },
+  tryAgainLink: {
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+  },
+  tryAgainLinkText: {
+    fontSize: 16,
+    color: colors.primary.teal,
+    textDecorationLine: 'underline',
+    fontWeight: '500',
   },
   errorText: {
     fontSize: 16,
@@ -478,8 +578,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   retryButton: {
-    paddingVertical: 15,
-    paddingHorizontal: 40,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
     borderRadius: 25,
     backgroundColor: colors.primary.teal,
   },

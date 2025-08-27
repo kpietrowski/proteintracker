@@ -73,6 +73,22 @@ class PurchaseService {
                   case 'transactionComplete':
                     console.log('💰 Purchase successful globally');
                     await this.handleSuccessfulPurchase();
+                    
+                    // Check if we need to navigate to PhoneAuth (for onboarding flow)
+                    console.log('🔄 Checking if navigation to PhoneAuth is needed...');
+                    console.log('🔍 Current screen:', global.currentScreen);
+                    
+                    if (global.currentScreen === 'OnboardingScreen7') {
+                      console.log('🎯 OnboardingScreen7 detected - triggering navigation to PhoneAuth');
+                      if (global.onboardingNavigateToPhoneAuth) {
+                        console.log('✅ Calling global navigation callback');
+                        global.onboardingNavigateToPhoneAuth();
+                      } else {
+                        console.log('❌ Global navigation callback not found');
+                      }
+                    } else {
+                      console.log('ℹ️ Not on OnboardingScreen7, no navigation needed');
+                    }
                     break;
                   case 'transaction_fail':
                   case 'transactionFail':
@@ -102,12 +118,14 @@ class PurchaseService {
 
   async showPaywall(placement: string = 'onboarding_complete'): Promise<void> {
     try {
-      if (Superwall && typeof Superwall.register === 'function') {
-        // Superwall.register will automatically present the paywall
-        // configured in your Superwall dashboard for this placement
-        await Superwall.register(placement);
+      if (Superwall && Superwall.shared) {
+        // Use the new Superwall v2+ API with object syntax
+        await Superwall.shared.register({
+          placement: placement,
+          params: {} // Add any custom parameters here if needed
+        });
       } else {
-        console.warn('Superwall not available or register function not found - using fallback');
+        console.warn('Superwall not available or shared instance not found - using fallback');
         // For simulator testing, just simulate successful subscription
         return;
       }

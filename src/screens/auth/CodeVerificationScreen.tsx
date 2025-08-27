@@ -117,8 +117,12 @@ export default function CodeVerificationScreen() {
         // Clear onboarding data from storage since it's now in the database
         clearData();
         
-        // RootNavigator will automatically detect the auth state change and navigate to main app
-        console.log('Phone verification complete - auth state will trigger navigation');
+        // Navigate directly to Main tabs
+        console.log('Phone verification complete - navigating to Main');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Main' as never }],
+        });
       }
       
     } catch (error) {
@@ -169,12 +173,18 @@ export default function CodeVerificationScreen() {
       // Clear onboarding data from storage
       clearData();
       
-      // Navigation will be handled automatically by RootNavigator
-      console.log('Mock authentication complete - auth state will trigger navigation');
+      // Navigate directly to Main tabs for development
+      console.log('Mock authentication complete - navigating to Main');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Main' as never }],
+      });
       
     } catch (error) {
       console.error('Failed to create mock user profile:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -11,6 +11,7 @@ import {
   Easing,
   Share,
   Alert,
+  Modal,
 } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,6 +20,7 @@ import { colors } from '../constants/colors';
 import { DailySummary, WeeklyProgress, DayProgress } from '../types';
 import { supabase, getDailySummary, getUserProfile } from '../services/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { hapticFeedback } from '../utils/haptics';
 
 const { width } = Dimensions.get('window');
 
@@ -438,6 +440,7 @@ export default function HomeScreen() {
 
 
   const handleLogProtein = () => {
+    hapticFeedback.medium();  // Medium haptic for main action
     navigation.navigate('VoiceInput' as never);
   };
 
@@ -639,17 +642,13 @@ export default function HomeScreen() {
   const goalProtein = dailySummary?.goalProtein || 140;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={styles.screenWrapper}>
+      <SafeAreaView style={styles.container}>
+        <ScrollView showsVerticalScrollIndicator={false}>
         {/* Date Header */}
         <View style={styles.header}>
           <Text style={styles.dateText}>{formatDate(new Date())}</Text>
           
-          {/* Streak Counter */}
-          <View style={styles.streakContainer}>
-            <Text style={styles.streakEmoji}>🔥</Text>
-            <Text style={styles.streakNumber}>{currentStreak}</Text>
-          </View>
         </View>
 
         {/* Weekly Progress Rings */}
@@ -730,7 +729,9 @@ export default function HomeScreen() {
             <View style={styles.ringContent}>
               {isGoalMet ? (
                 <View style={styles.goalMetContent}>
-                  <Text style={styles.goalMetTitle}>Protein Goal Hit!</Text>
+                  <Text style={styles.goalMetTitle}>Protein</Text>
+                  <Text style={styles.goalMetTitle}>Goal</Text>
+                  <Text style={styles.goalMetTitle}>Hit!</Text>
                   <Text style={styles.goalMetStats}>{displayProtein}/{goalProtein} grams</Text>
                 </View>
               ) : (
@@ -791,24 +792,54 @@ export default function HomeScreen() {
           </View>
         )}
       </ScrollView>
+      </SafeAreaView>
       
       {/* Sophisticated Success Notification */}
-      {showSuccessNotification && (
-        <View style={styles.successModal}>
-          <View style={styles.successModalBackdrop} />
-          <View style={styles.successCard}>
-            <View style={styles.successIconContainer}>
-              <LinearGradient
-                colors={['#4CAF50', '#45A049']}
-                style={styles.successIconGradient}
-              >
-                <Text style={styles.successCheckmark}>✓</Text>
-              </LinearGradient>
+      <Modal
+        visible={showSuccessNotification}
+        animationType="fade"
+        transparent={false}
+        statusBarTranslucent={true}
+      >
+        <View style={styles.successCard}>
+            <Text style={styles.successTitle}>Protein Goal Achieved!</Text>
+            
+            {/* Large Progress Ring with Streak */}
+            <View style={styles.streakRingContainer}>
+              <View style={styles.streakIconContainer}>
+                <Text style={styles.streakIcon}>🔥</Text>
+              </View>
+              
+              <View style={styles.largeProgressRing}>
+                <View style={styles.emptyCircleRing} />
+                <View style={styles.streakCenter}>
+                  <Text style={styles.streakNumberLarge}>{currentStreak}</Text>
+                  <Text style={styles.streakTextLarge}>Day streak!</Text>
+                </View>
+              </View>
             </View>
             
-            <Text style={styles.successTitle}>Goal Achieved</Text>
+            {/* Weekly Days */}
+            <View style={styles.successWeeklyRings}>
+              {weeklyProgress?.weekDays.map((day) => (
+                <View key={day.dayName} style={styles.successDayRing}>
+                  <View style={[
+                    styles.successDayCircle,
+                    day.goalMet && !day.isFuture ? styles.successDayCircleComplete : {}
+                  ]}>
+                    <Text style={[
+                      styles.successDayLetter,
+                      day.goalMet && !day.isFuture ? styles.successDayLetterComplete : {}
+                    ]}>
+                      {day.dayName.charAt(0)}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+            
             <Text style={styles.successMessage}>
-              Excellent work completing your daily protein target of {goalProtein}g.
+              Hit your Protein Goal each day so your streak won't reset!
             </Text>
             
             <View style={styles.successActions}>
@@ -816,7 +847,7 @@ export default function HomeScreen() {
                 style={styles.shareAction}
                 onPress={handleShare}
               >
-                <Text style={styles.shareActionText}>Share Achievement</Text>
+                <Text style={styles.shareActionText}>Share</Text>
               </TouchableOpacity>
               
               <TouchableOpacity 
@@ -827,9 +858,8 @@ export default function HomeScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      )}
-    </SafeAreaView>
+      </Modal>
+    </View>
   );
 }
 
@@ -914,6 +944,9 @@ function ProgressRing({ percentage, color, size, strokeWidth, animated = false }
 }
 
 const styles = StyleSheet.create({
+  screenWrapper: {
+    flex: 1,
+  },
   container: {
     flex: 1,
     backgroundColor: colors.background.main,
@@ -935,34 +968,39 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background.white,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 2,
+    paddingVertical: 1,
+    borderRadius: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 1,
+    elevation: 1,
+  },
+  streakContainerMinimal: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   streakEmoji: {
     fontSize: 16,
-    marginRight: 5,
+    marginRight: 4,
   },
   streakNumber: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: colors.text.primary,
+    color: '#000000',
     minWidth: 18,
     textAlign: 'center',
   },
   weeklySection: {
     paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingTop: 0,
+    paddingBottom: 10,
   },
   sectionTitle: {
     fontSize: 16,
     color: colors.text.secondary,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   weeklyRings: {
     flexDirection: 'row',
@@ -1174,29 +1212,19 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 1000,
+    zIndex: 9999,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  successModalBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-  },
   successCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 32,
-    marginHorizontal: 40,
+    flex: 1,
+    width: '100%',
+    paddingTop: 100,
+    paddingBottom: 40,
+    paddingHorizontal: 32,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.25,
-    shadowRadius: 25,
-    elevation: 25,
+    justifyContent: 'center',
   },
   successIconContainer: {
     marginBottom: 24,
@@ -1214,11 +1242,120 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   successTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
     color: '#1A1A1A',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 40,
+  },
+  streakRingContainer: {
+    alignItems: 'center',
+    marginBottom: 32,
+    position: 'relative',
+  },
+  streakIconContainer: {
+    position: 'absolute',
+    top: -10,
+    right: 30,
+    zIndex: 2,
+    backgroundColor: '#ff6b35',
+    borderRadius: 20,
+    padding: 8,
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  streakIcon: {
+    fontSize: 20,
+  },
+  largeProgressRing: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyCircleRing: {
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    borderWidth: 16,
+    borderColor: '#ff6b35',
+    backgroundColor: 'transparent',
+  },
+  streakCenter: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  streakNumber: {
+    fontSize: 72,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  streakLabel: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginTop: -8,
+  },
+  goalHitLine: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    lineHeight: 28,
+  },
+  proteinGrams: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  streakNumberLarge: {
+    fontSize: 120,
+    fontWeight: '800',
+    color: '#ff6b35',
+    textAlign: 'center',
+    lineHeight: 120,
+  },
+  streakTextLarge: {
+    fontSize: 28,
+    fontWeight: '600',
+    color: '#ff6b35',
+    textAlign: 'center',
+    marginTop: -10,
+  },
+  successWeeklyRings: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 32,
+    paddingHorizontal: 8,
+    gap: 8,
+  },
+  successDayRing: {
+    alignItems: 'center',
+  },
+  successDayCircle: {
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    borderWidth: 2,
+    borderColor: '#ff6b35',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  successDayCircleComplete: {
+    backgroundColor: '#ff6b35',
+  },
+  successDayLetter: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#ff6b35',
+  },
+  successDayLetterComplete: {
+    color: '#FFFFFF',
   },
   successMessage: {
     fontSize: 16,
@@ -1230,27 +1367,38 @@ const styles = StyleSheet.create({
   successActions: {
     flexDirection: 'row',
     gap: 12,
+    alignItems: 'center',
   },
   shareAction: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#ff6b35',
+    height: 54,
+    paddingHorizontal: 16,
+    borderRadius: 27,
+    minWidth: 70,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   shareActionText: {
-    fontSize: 16,
+    color: '#ff6b35',
+    fontSize: 14,
     fontWeight: '600',
-    color: '#FFFFFF',
+    textAlign: 'center',
   },
   continueAction: {
-    backgroundColor: '#F5F5F5',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+    backgroundColor: '#ff6b35',
+    height: 54,
+    paddingHorizontal: 50,
+    borderRadius: 27,
+    flex: 2.5,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   continueActionText: {
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 17,
     fontWeight: '600',
-    color: '#1A1A1A',
+    textAlign: 'center',
   },
 });

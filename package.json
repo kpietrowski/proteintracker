@@ -25,6 +25,7 @@
     "expo-constants": "^17.1.7",
     "expo-dev-client": "~5.2.4",
     "expo-file-system": "^18.1.11",
+    "expo-haptics": "^14.1.4",
     "expo-linear-gradient": "^14.1.5",
     "expo-status-bar": "~2.2.3",
     "form-data": "^4.0.4",
