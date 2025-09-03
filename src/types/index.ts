@@ -110,20 +110,29 @@ export type MainTabParamList = {
 
 export type OnboardingStackParamList = {
   Welcome: undefined;
+  Goal: undefined;
+  PrimaryGoal: undefined;
   CurrentTracking: undefined;
   NutritionChallenges: undefined;
   GoalImportance: undefined;
   Age: undefined;
   Height: undefined;
+  TrackingExperience: undefined;
+  ProteinAIResults: undefined;
   Weight: undefined;
   Gender: undefined;
   ExerciseFrequency: undefined;
   ExerciseType: undefined;
   DreamOutcome: undefined;
-  GoalCalculation: undefined;
   Final: undefined;
   ActivityLevel: undefined; // Keep for backward compatibility
+  ProteinAIComparison: undefined;
+  DesiredWeight: undefined;
+  ProteinProgressConcern: undefined;
+  ReadyForGoal: undefined;
+  PotentialToCrush: undefined;
+  GiveUsRating: undefined;
+  NotificationPermission: undefined;
+  Loading: undefined;
   Paywall: undefined;
-  PhoneAuth: undefined;
-  CodeVerification: { phoneNumber: string };
 };

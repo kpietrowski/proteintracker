@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useOnboarding } from '../../context/OnboardingContext';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
+import { hapticFeedback } from '../../utils/haptics';
 
 export default function OnboardingScreen10() {
   const navigation = useNavigation();
@@ -14,46 +15,24 @@ export default function OnboardingScreen10() {
 
   const exerciseTypes = [
     {
-      id: 'strength-training',
-      text: 'Strength training / Weightlifting',
-      icon: 'barbell',
-      iconLib: 'Ionicons',
+      id: 'mostly-weightlifting',
+      text: 'Strength Training & Weightlifting',
     },
     {
-      id: 'cardio',
-      text: 'Cardio (running, cycling, swimming)',
-      icon: 'heart',
-      iconLib: 'Ionicons',
+      id: 'mostly-cardio',
+      text: 'Cardiovascular Training',
     },
     {
-      id: 'sports',
-      text: 'Sports (basketball, soccer, tennis, etc.)',
-      icon: 'basketball',
-      iconLib: 'Ionicons',
+      id: 'mostly-sports',
+      text: 'Sports & Athletic Training',
     },
     {
-      id: 'yoga-pilates',
-      text: 'Yoga / Pilates / Stretching',
-      icon: 'body',
-      iconLib: 'Ionicons',
+      id: 'high-intensity',
+      text: 'HIIT/CrossFit Training',
     },
     {
-      id: 'hiit',
-      text: 'High-intensity workouts (CrossFit, HIIT)',
-      icon: 'flash',
-      iconLib: 'Ionicons',
-    },
-    {
-      id: 'walking',
-      text: 'Walking / Light activity',
-      icon: 'walk',
-      iconLib: 'Ionicons',
-    },
-    {
-      id: 'mixed',
-      text: 'Mixed - I do different types',
-      icon: 'shuffle',
-      iconLib: 'Ionicons',
+      id: 'flexibility',
+      text: 'Yoga, Pilates, Stretching',
     },
   ];
 
@@ -64,26 +43,17 @@ export default function OnboardingScreen10() {
 
   const handleNext = () => {
     if (selectedType) {
+      hapticFeedback.medium();
       setExerciseType(selectedType);
-      navigation.navigate('DreamOutcome' as never);
+      navigation.navigate('ExerciseFrequency' as never);
     }
   };
 
   const handleBack = () => {
+    hapticFeedback.light();
     navigation.goBack();
   };
 
-  const renderIcon = (type: any) => {
-    const IconComponent = type.iconLib === 'MaterialIcons' ? MaterialIcons : Ionicons;
-    
-    return (
-      <IconComponent 
-        name={type.icon} 
-        size={24} 
-        color={(selectedType && selectedType === type.text) ? '#007AFF' : '#6B6B6B'} 
-      />
-    );
-  };
 
   // Early return if state is not ready
   if (!state) {
@@ -102,45 +72,47 @@ export default function OnboardingScreen10() {
       <View style={styles.progressContainer}>
         <View style={styles.progressHeader}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="#007AFF" />
+            <Ionicons name="chevron-back" size={24} color="#1A1A1A" />
           </TouchableOpacity>
-          <Text style={styles.progressText}>Step 10 of 13</Text>
+          <View style={styles.backButton} />
           <View style={styles.backButton} />
         </View>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '76.9%' }]} />
+          <View style={[styles.progressFill, { width: '35%' }]} />
         </View>
       </View>
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.title}>What type of exercise do you do most?</Text>
+        <Text style={styles.title}>What kind of workouts do you do?</Text>
         <Text style={styles.subtitle}>
-          Understanding your exercise type helps us fine-tune your protein recommendations.
+          This helps us generate your plan
         </Text>
 
         <View style={styles.optionsContainer}>
           {exerciseTypes.map((type) => (
-            <TouchableOpacity
-              key={type.id}
-              style={[
-                styles.optionCard,
-                (selectedType && selectedType === type.text) && styles.optionCardSelected,
-              ]}
-              onPress={() => setSelectedType(type.text)}
-            >
-              <View style={styles.optionContent}>
-                {renderIcon(type)}
-                <Text
-                  style={[
-                    styles.optionText,
-                    (selectedType && selectedType === type.text) && styles.optionTextSelected,
-                  ]}
-                >
-                  {type.text}
-                </Text>
-              </View>
-            </TouchableOpacity>
+              <TouchableOpacity
+                key={type.id}
+                style={[
+                  styles.optionCard,
+                  (selectedType && selectedType === type.text) && styles.optionCardSelected,
+                ]}
+                onPress={() => {
+                  hapticFeedback.selection();
+                  setSelectedType(type.text);
+                }}
+              >
+                <View style={styles.optionContent}>
+                  <Text
+                    style={[
+                      styles.optionText,
+                      (selectedType && selectedType === type.text) && styles.optionTextSelected,
+                    ]}
+                  >
+                    {type.text}
+                  </Text>
+                </View>
+              </TouchableOpacity>
           ))}
         </View>
       </View>
@@ -177,14 +149,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   progressText: {
     fontSize: 14,
@@ -198,7 +165,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#000000',
     borderRadius: 2,
   },
   content: {
@@ -222,7 +189,7 @@ const styles = StyleSheet.create({
   },
   optionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 29,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -238,22 +205,23 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   optionCardSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#F0F8FF',
+    borderColor: '#000000',
+    backgroundColor: '#000000',
   },
   optionText: {
     fontSize: 18,
     fontWeight: '600',
     color: '#1A1A1A',
     flex: 1,
+    paddingLeft: 20,
   },
   optionTextSelected: {
-    color: '#007AFF',
+    color: '#FFFFFF',
   },
   nextButton: {
     backgroundColor: '#2D2D2D',
-    borderRadius: 12,
-    height: 50,
+    borderRadius: 29,
+    height: 58,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 20,

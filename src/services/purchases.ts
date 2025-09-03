@@ -18,6 +18,7 @@ try {
 
 class PurchaseService {
   private initialized = false;
+  private paywallDismissCallback: ((event: any) => void) | null = null;
 
   async initialize() {
     if (this.initialized) return;
@@ -64,25 +65,50 @@ class PurchaseService {
                 console.log('🔵 Global Superwall Event:', event);
                 
                 // Handle different Superwall events
-                switch (event.type) {
+                switch (event.type || event.name) {
                   case 'paywall_close':
                   case 'paywallClose':
                     console.log('👋 Paywall closed globally');
+                    break;
+                  case 'paywall_dismiss':
+                  case 'paywallDismiss':
+                    console.log('👋 Paywall dismissed globally');
+                    // Check if this was a successful purchase dismiss
+                    if (event.result === 'purchased') {
+                      console.log('💰 Paywall dismissed with purchase - treating as success');
+                      await this.handleSuccessfulPurchase();
+                      
+                      // Check if we need to complete onboarding locally
+                      if (global.currentScreen === 'OnboardingScreen7') {
+                        console.log('🎯 OnboardingScreen7 detected - triggering local onboarding completion');
+                        if (global.onboardingCompleteLocally) {
+                          console.log('✅ Calling global navigation callback');
+                          global.onboardingCompleteLocally();
+                        } else {
+                          console.log('❌ Global navigation callback not found');
+                        }
+                      }
+                    } else {
+                      console.log('❌ Paywall dismissed without purchase - staying on current screen');
+                      // Don't navigate anywhere - just stay on the current screen
+                      // The paywall has been dismissed and user should remain where they were
+                      console.log('✅ Paywall dismissed - no navigation needed, staying on current screen');
+                    }
                     break;
                   case 'transaction_complete':
                   case 'transactionComplete':
                     console.log('💰 Purchase successful globally');
                     await this.handleSuccessfulPurchase();
                     
-                    // Check if we need to navigate to PhoneAuth (for onboarding flow)
-                    console.log('🔄 Checking if navigation to PhoneAuth is needed...');
+                    // Check if we need to complete onboarding locally (for onboarding flow)
+                    console.log('🔄 Checking if local onboarding completion is needed...');
                     console.log('🔍 Current screen:', global.currentScreen);
                     
                     if (global.currentScreen === 'OnboardingScreen7') {
-                      console.log('🎯 OnboardingScreen7 detected - triggering navigation to PhoneAuth');
-                      if (global.onboardingNavigateToPhoneAuth) {
+                      console.log('🎯 OnboardingScreen7 detected - triggering local onboarding completion');
+                      if (global.onboardingCompleteLocally) {
                         console.log('✅ Calling global navigation callback');
-                        global.onboardingNavigateToPhoneAuth();
+                        global.onboardingCompleteLocally();
                       } else {
                         console.log('❌ Global navigation callback not found');
                       }
@@ -228,6 +254,9 @@ class PurchaseService {
       console.error('Error logging out:', error);
     }
   }
+
+  // Paywall dismiss callback management
+  // Removed paywall dismiss callback system - now handled directly in delegate
 }
 
 export const purchaseService = new PurchaseService();

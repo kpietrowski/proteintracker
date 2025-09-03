@@ -1,81 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, TouchableWithoutFeedback, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useOnboarding } from '../../context/OnboardingContext';
+import { Ionicons } from '@expo/vector-icons';
+import Slider from '@react-native-community/slider';
+import { hapticFeedback } from '../../utils/haptics';
 
 export default function OnboardingScreen6() {
   const navigation = useNavigation();
   const { state, setWeight: setWeightInContext } = useOnboarding();
   
-  // Initialize from context
-  const [weight, setWeight] = useState<string>(
-    state.data.weightUnit === 'lbs' && state.data.weightLbs 
-      ? state.data.weightLbs.toString()
-      : state.data.weightUnit === 'kg' && state.data.weightKg
-      ? state.data.weightKg.toString()
-      : ''
-  );
+  // Initialize with default 150 lbs
+  const [weight, setWeight] = useState<number>(150);
   const [unit, setUnit] = useState<'lbs' | 'kg'>(state.data.weightUnit || 'lbs');
+  const [lastHapticValue, setLastHapticValue] = useState<number>(150);
 
   useEffect(() => {
-    // Update local state when context changes
+    // Initialize from context if available
     if (state.data.weightUnit) {
       setUnit(state.data.weightUnit);
       if (state.data.weightUnit === 'lbs' && state.data.weightLbs) {
-        setWeight(state.data.weightLbs.toString());
+        setWeight(state.data.weightLbs);
       } else if (state.data.weightUnit === 'kg' && state.data.weightKg) {
-        setWeight(state.data.weightKg.toString());
+        setWeight(state.data.weightKg);
+      } else {
+        // Set default based on unit
+        setWeight(unit === 'lbs' ? 150 : 68);
       }
     }
-  }, [state.data]);
+  }, [state.data, unit]);
 
   const handleNext = () => {
-    if (isValidWeight) {
-      // Save to context
-      if (unit === 'lbs') {
-        setWeightInContext(unit, parseInt(weight));
-      } else {
-        setWeightInContext(unit, undefined, parseInt(weight));
-      }
-      navigation.navigate('ActivityLevel' as never);
+    hapticFeedback.medium();
+    // Save to context
+    if (unit === 'lbs') {
+      setWeightInContext(unit, Math.round(weight));
+    } else {
+      setWeightInContext(unit, undefined, Math.round(weight));
     }
+    navigation.navigate('ProteinAIComparison' as never);
   };
 
   const handleBack = () => {
+    hapticFeedback.light();
     navigation.goBack();
   };
 
-  const handleDone = () => {
-    Keyboard.dismiss();
-  };
-
-  const KeyboardToolbar = () => (
-    <View style={styles.keyboardToolbar}>
-      <View style={styles.toolbarSpacer} />
-      <TouchableOpacity onPress={handleDone} style={styles.toolbarDoneButton}>
-        <Text style={styles.toolbarDoneText}>Done</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const isValidWeight = weight && (
-    unit === 'lbs' 
-      ? parseInt(weight) >= 50 && parseInt(weight) <= 500
-      : parseInt(weight) >= 20 && parseInt(weight) <= 250
-  );
+  // Slider ranges
+  const minWeight = unit === 'lbs' ? 50 : 23;
+  const maxWeight = unit === 'lbs' ? 400 : 181;
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-        <View style={styles.container}>
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
+        <View style={styles.progressHeader}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="chevron-back" size={24} color="#1A1A1A" />
+          </TouchableOpacity>
+          <View style={styles.backButton} />
+          <View style={styles.backButton} />
+        </View>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '66%' }]} />
+          <View style={[styles.progressFill, { width: '45%' }]} />
         </View>
       </View>
 
@@ -90,7 +78,14 @@ export default function OnboardingScreen6() {
         <View style={styles.unitSelector}>
           <TouchableOpacity
             style={[styles.unitButton, unit === 'lbs' && styles.unitButtonSelected]}
-            onPress={() => setUnit('lbs')}
+            onPress={() => {
+              hapticFeedback.selection();
+              setUnit('lbs');
+              // Convert weight when switching units
+              if (unit === 'kg') {
+                setWeight(Math.round(weight * 2.20462));
+              }
+            }}
           >
             <Text style={[styles.unitButtonText, unit === 'lbs' && styles.unitButtonTextSelected]}>
               LBS
@@ -98,7 +93,14 @@ export default function OnboardingScreen6() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.unitButton, unit === 'kg' && styles.unitButtonSelected]}
-            onPress={() => setUnit('kg')}
+            onPress={() => {
+              hapticFeedback.selection();
+              setUnit('kg');
+              // Convert weight when switching units
+              if (unit === 'lbs') {
+                setWeight(Math.round(weight * 0.453592));
+              }
+            }}
           >
             <Text style={[styles.unitButtonText, unit === 'kg' && styles.unitButtonTextSelected]}>
               KG
@@ -106,41 +108,57 @@ export default function OnboardingScreen6() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
+        {/* Weight Display */}
+        <View style={styles.weightDisplay}>
+          <Text style={styles.weightValue}>
+            {Math.round(weight)} {unit}
+          </Text>
+        </View>
+
+        {/* Weight Slider */}
+        <View style={styles.sliderContainer}>
+          <Slider
+            style={styles.slider}
+            minimumValue={minWeight}
+            maximumValue={maxWeight}
             value={weight}
-            onChangeText={setWeight}
-            placeholder={unit === 'lbs' ? "150" : "70"}
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-            returnKeyType="done"
-            onSubmitEditing={() => Keyboard.dismiss()}
-            blurOnSubmit={true}
-            {...(Platform.OS === 'ios' && { inputAccessoryView: <KeyboardToolbar /> })}
+            step={1}
+            onValueChange={(value) => {
+              setWeight(value);
+              // Trigger haptic every 5 units to avoid too many haptics
+              if (Math.abs(value - lastHapticValue) >= 5) {
+                hapticFeedback.selection();
+                setLastHapticValue(value);
+              }
+            }}
+            onSlidingStart={() => hapticFeedback.light()}
+            onSlidingComplete={(value) => {
+              hapticFeedback.medium();
+              setWeight(value);
+            }}
+            minimumTrackTintColor="#000000"
+            maximumTrackTintColor="#E5E5E5"
           />
-          <Text style={styles.unitLabel}>
-            {unit}
-          </Text>
-        </View>
-
-        {weight && !isValidWeight && (
-          <Text style={styles.errorText}>
-            Please enter a valid weight {unit === 'lbs' ? '(50-500 lbs)' : '(20-250 kg)'}
-          </Text>
-        )}
+          <View style={styles.sliderLabels}>
+            <View style={styles.tickMarks}>
+              {Array.from({ length: 21 }, (_, i) => (
+                <View key={i} style={styles.tickMark} />
+              ))}
+            </View>
+            <Text style={styles.maxWeightLabel}>
+              {maxWeight} {unit}
+            </Text>
           </View>
-
-          {/* Next Button */}
-          <TouchableOpacity
-            style={[styles.nextButton, !isValidWeight && styles.nextButtonDisabled]}
-            onPress={handleNext}
-            disabled={!isValidWeight}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
-          </TouchableOpacity>
         </View>
-      </TouchableWithoutFeedback>
+      </View>
+
+      {/* Next Button */}
+      <TouchableOpacity
+        style={styles.nextButton}
+        onPress={handleNext}
+      >
+        <Text style={styles.nextButtonText}>Next</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -151,39 +169,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
   },
   progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 20,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
-  backArrow: {
-    fontSize: 24,
-    color: '#1A1A1A',
+  progressText: {
+    fontSize: 14,
+    color: '#6B6B6B',
+    textAlign: 'center',
   },
   progressBar: {
-    flex: 1,
     height: 4,
     backgroundColor: '#E5E5E5',
     borderRadius: 2,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#000000',
     borderRadius: 2,
   },
   content: {
@@ -232,70 +248,52 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     fontWeight: '600',
   },
-  inputContainer: {
-    flexDirection: 'row',
+  weightDisplay: {
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    marginBottom: 10,
+    marginBottom: 60,
+    marginTop: 40,
   },
-  input: {
-    flex: 1,
-    fontSize: 24,
-    fontWeight: '600',
+  weightValue: {
+    fontSize: 48,
+    fontWeight: 'bold',
     color: '#1A1A1A',
   },
-  unitLabel: {
-    fontSize: 18,
-    fontWeight: '500',
-    color: '#6B6B6B',
-    marginLeft: 10,
+  sliderContainer: {
+    paddingHorizontal: 10,
   },
-  errorText: {
-    fontSize: 14,
-    color: '#FF3B30',
-    textAlign: 'center',
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  sliderLabels: {
     marginTop: 10,
+    position: 'relative',
   },
-  keyboardToolbar: {
+  tickMarks: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    backgroundColor: '#F7F7F7',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: '#CCCCCC',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    marginBottom: 15,
   },
-  toolbarSpacer: {
-    flex: 1,
+  tickMark: {
+    width: 1,
+    height: 8,
+    backgroundColor: '#D1D1D1',
   },
-  toolbarDoneButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  toolbarDoneText: {
-    fontSize: 17,
-    color: '#007AFF',
-    fontWeight: '600',
+  maxWeightLabel: {
+    fontSize: 14,
+    color: '#6B6B6B',
+    textAlign: 'right',
+    paddingRight: 10,
   },
   nextButton: {
     backgroundColor: '#2D2D2D',
-    borderRadius: 12,
-    height: 50,
+    borderRadius: 29,
+    height: 58,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 20,
     marginBottom: 20,
-  },
-  nextButtonDisabled: {
-    backgroundColor: '#CCCCCC',
   },
   nextButtonText: {
     fontSize: 18,
