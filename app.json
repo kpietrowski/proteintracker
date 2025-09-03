@@ -13,13 +13,23 @@
       "backgroundColor": "#ffffff"
     },
     "plugins": [
-      "expo-dev-client"
+      "expo-dev-client",
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#ffffff"
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": false,
+      "buildNumber": "3",
       "infoPlist": {
-        "NSMicrophoneUsageDescription": "This app uses the microphone to record voice input for logging protein intake.",
-        "NSCameraUsageDescription": "This app uses the camera to scan food barcodes for easier protein logging.",
+        "NSMicrophoneUsageDescription": "Cal AI uses your microphone to allow voice input for quickly and easily logging your protein intake throughout the day.",
+        "NSCameraUsageDescription": "Cal AI uses your camera to scan food barcodes and labels, making it faster to log protein-rich foods and track your daily goals.",
+        "NSUserNotificationsUsageDescription": "Protein AI uses notifications to help you track your protein goals, celebrate milestones, and send helpful reminders throughout your fitness journey.",
         "ITSAppUsesNonExemptEncryption": false
       },
       "bundleIdentifier": "com.protein.proteintracker"
@@ -36,12 +46,6 @@
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.READ_EXTERNAL_STORAGE",
         "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.INTERNET",
-        "android.permission.RECORD_AUDIO",
-        "android.permission.CAMERA",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.INTERNET"
       ],
       "package": "com.protein.proteintracker"
@@ -50,16 +54,16 @@
       "favicon": "./assets/favicon.png"
     },
     "extra": {
-      "SUPABASE_URL": "https://ejwjwedljapgfcquudgq.supabase.co",
-      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqd2p3ZWRsamFwZ2ZjcXV1ZGdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzY2ODIsImV4cCI6MjA3MTcxMjY4Mn0.cFLaHT4jX0gNxcnqDEROJSDe2uLlg6DG6CHc4tgROlY",
-      "OPENAI_API_KEY": "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",
-      "REVENUECAT_API_KEY_IOS": "appl_mFYqSCkurpuFyFAkHQGocyOoMbZ",
-      "REVENUECAT_API_KEY_ANDROID": "appl_mFYqSCkurpuFyFAkHQGocyOoMbZ",
-      "SUPERWALL_API_KEY": "pk_JOzOl7TqQL7cVPa2YVeMe",
-      "APP_ENV": "development",
       "eas": {
         "projectId": "871bb8e5-36a8-48de-9d2f-e83e38077226"
-      }
+      },
+      "SUPERWALL_API_KEY": "pk_JOzOl7TqQL7cVPa2YVeMe",
+      "OPENAI_API_KEY": "",
+      "SUPABASE_URL": "https://ejwjwedljapgfcquudgq.supabase.co",
+      "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVqd2p3ZWRsamFwZ2ZjcXV1ZGdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYxMzY2ODIsImV4cCI6MjA3MTcxMjY4Mn0.cFLaHT4jX0gNxcnqDEROJSDe2uLlg6DG6CHc4tgROlY",
+      "REVENUECAT_API_KEY_IOS": "appl_mFYqSCkurpuFyFAkHQGocyOoMbZ",
+      "REVENUECAT_API_KEY_ANDROID": "appl_mFYqSCkurpuFyFAkHQGocyOoMbZ",
+      "APP_ENV": "development"
     },
     "owner": "katiepietrowski"
   }
