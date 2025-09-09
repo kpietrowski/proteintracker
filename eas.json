@@ -8,15 +8,35 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "NODE_ENV": "development"
+        "NODE_ENV": "development",
+        "APP_ENV": "development"
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "NODE_ENV": "staging",
+        "APP_ENV": "staging"
+      }
     },
-    "production": {}
+    "production": {
+      "ios": {
+        "distribution": "store",
+        "buildConfiguration": "Release"
+      },
+      "env": {
+        "APP_ENV": "production",
+        "EXPO_USE_METRO_REQUIRE": "1"
+      }
+    }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "katiepietrowski@gmail.com",
+        "ascAppId": "6751508163",
+        "appleTeamId": "5S3B449N96"
+      }
+    }
   }
 }

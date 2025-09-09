@@ -1,47 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../context/OnboardingContext';
+import { hapticFeedback } from '../../utils/haptics';
 
 export default function OnboardingScreen4() {
   const navigation = useNavigation();
   const { state, setAge: setAgeInContext } = useOnboarding();
-  const [age, setAge] = useState<string>(state.data.age ? state.data.age.toString() : '');
+  const [age, setAge] = useState<string>(state.data.age ? state.data.age.toString() : '35');
+  const [isValid, setIsValid] = useState<boolean>(true);
 
   useEffect(() => {
-    setAge(state.data.age ? state.data.age.toString() : '');
+    if (state.data.age) {
+      setAge(state.data.age.toString());
+    }
   }, [state.data.age]);
 
   const handleNext = () => {
-    const ageNum = parseInt(age);
-    if (age && ageNum >= 13 && ageNum <= 120) {
-      setAgeInContext(ageNum);
+    hapticFeedback.medium();
+    const ageNumber = parseInt(age);
+    if (isValidAge(ageNumber)) {
+      setAgeInContext(ageNumber);
       navigation.navigate('Height' as never);
     }
   };
 
   const handleBack = () => {
+    hapticFeedback.light();
     navigation.goBack();
   };
 
-  const isValidAge = age && parseInt(age) >= 13 && parseInt(age) <= 120;
+  const isValidAge = (ageValue: number): boolean => {
+    return !isNaN(ageValue) && ageValue >= 13 && ageValue <= 120;
+  };
+
+  const handleAgeChange = (text: string) => {
+    setAge(text);
+    const ageNumber = parseInt(text);
+    setIsValid(text === '' || isValidAge(ageNumber));
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-        <View style={styles.container}>
+      <View style={styles.container}>
           {/* Progress Bar */}
           <View style={styles.progressContainer}>
             <View style={styles.progressHeader}>
               <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-                <Text style={styles.backArrow}>←</Text>
+                <Ionicons name="chevron-back" size={24} color="#1A1A1A" />
               </TouchableOpacity>
-              <Text style={styles.progressText}>Step 5 of 13</Text>
+              <View style={styles.backButton} />
               <View style={styles.backButton} />
             </View>
             <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '38.5%' }]} />
+              <View style={[styles.progressFill, { width: '10%' }]} />
             </View>
           </View>
 
@@ -52,39 +66,42 @@ export default function OnboardingScreen4() {
               Age helps us calculate your personalized protein needs.
             </Text>
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            value={age}
-            onChangeText={setAge}
-            placeholder="Enter your age"
-            placeholderTextColor="#999"
-            keyboardType="numeric"
-            maxLength={3}
-            returnKeyType="done"
-            onSubmitEditing={() => Keyboard.dismiss()}
-            blurOnSubmit={true}
-          />
-          <Text style={styles.unit}>years</Text>
-        </View>
-
-        {age && !isValidAge && (
-          <Text style={styles.errorText}>
-            Please enter a valid age between 13 and 120
-          </Text>
-        )}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Enter your age:</Text>
+              <TextInput
+                style={[
+                  styles.ageInput,
+                  !isValid && styles.ageInputError
+                ]}
+                value={age}
+                onChangeText={handleAgeChange}
+                placeholder="35"
+                placeholderTextColor="#999"
+                keyboardType="numeric"
+                maxLength={3}
+                onSubmitEditing={Keyboard.dismiss}
+                returnKeyType="done"
+              />
+              {!isValid && (
+                <Text style={styles.errorText}>
+                  Please enter a valid age (13-120)
+                </Text>
+              )}
+            </View>
           </View>
 
           {/* Next Button */}
           <TouchableOpacity
-            style={[styles.nextButton, !isValidAge && styles.nextButtonDisabled]}
+            style={[
+              styles.nextButton,
+              (!age || !isValid) && styles.nextButtonDisabled
+            ]}
             onPress={handleNext}
-            disabled={!isValidAge}
+            disabled={!age || !isValid}
           >
             <Text style={styles.nextButtonText}>Next</Text>
           </TouchableOpacity>
-        </View>
-      </TouchableWithoutFeedback>
+      </View>
     </SafeAreaView>
   );
 }
@@ -114,18 +131,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  backArrow: {
-    fontSize: 24,
-    color: '#1A1A1A',
   },
   progressBar: {
     height: 4,
@@ -134,7 +142,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#000000',
     borderRadius: 2,
   },
   content: {
@@ -154,40 +162,48 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    marginBottom: 10,
+    marginBottom: 20,
   },
-  input: {
-    flex: 1,
-    fontSize: 24,
+  inputLabel: {
+    fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',
+    marginBottom: 15,
+    textAlign: 'center',
   },
-  unit: {
+  ageInput: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 12,
+    padding: 16,
     fontSize: 18,
-    fontWeight: '500',
-    color: '#6B6B6B',
-    marginLeft: 10,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    textAlign: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  ageInputError: {
+    borderColor: '#FF6B6B',
+    backgroundColor: '#FFF5F5',
   },
   errorText: {
     fontSize: 14,
-    color: '#FF3B30',
+    color: '#FF6B6B',
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: 8,
   },
   nextButton: {
     backgroundColor: '#2D2D2D',
-    borderRadius: 12,
-    height: 50,
+    borderRadius: 29,
+    height: 58,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 20,
@@ -195,6 +211,7 @@ const styles = StyleSheet.create({
   },
   nextButtonDisabled: {
     backgroundColor: '#CCCCCC',
+    opacity: 0.6,
   },
   nextButtonText: {
     fontSize: 18,

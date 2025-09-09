@@ -1,178 +1,160 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, TouchableWithoutFeedback, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useOnboarding } from '../../context/OnboardingContext';
+import { Ionicons } from '@expo/vector-icons';
+import Slider from '@react-native-community/slider';
+import { hapticFeedback } from '../../utils/haptics';
+
 
 export default function OnboardingScreen5() {
   const navigation = useNavigation();
   const { state, setHeight: setHeightInContext } = useOnboarding();
   
-  // Initialize from context
-  const [height, setHeight] = useState<string>(state.data.heightCm ? state.data.heightCm.toString() : '');
-  const [feet, setFeet] = useState<string>(state.data.heightFt ? state.data.heightFt.toString() : '');
-  const [inches, setInches] = useState<string>(state.data.heightIn !== undefined ? state.data.heightIn.toString() : '');
+  // Initialize with default 5'6" (66 inches total)
+  const [totalInches, setTotalInches] = useState<number>(66); // 5'6" = 66 inches
   const [unit, setUnit] = useState<'ft' | 'cm'>(state.data.heightUnit || 'ft');
-
-  useEffect(() => {
-    // Update local state when context changes
-    if (state.data.heightUnit) {
-      setUnit(state.data.heightUnit);
-      if (state.data.heightUnit === 'cm' && state.data.heightCm) {
-        setHeight(state.data.heightCm.toString());
-      } else if (state.data.heightUnit === 'ft') {
-        if (state.data.heightFt) setFeet(state.data.heightFt.toString());
-        if (state.data.heightIn !== undefined) setInches(state.data.heightIn.toString());
-      }
-    }
-  }, [state.data]);
+  const [lastHapticValue, setLastHapticValue] = useState<number>(66);
 
   const handleNext = () => {
-    if (isValidHeight) {
-      // Save to context
-      if (unit === 'ft') {
-        setHeightInContext(unit, parseInt(feet), parseInt(inches));
-      } else {
-        setHeightInContext(unit, undefined, undefined, parseInt(height));
-      }
-      navigation.navigate('Weight' as never);
+    hapticFeedback.medium();
+    // Convert totalInches to feet/inches and cm for context
+    const feet = Math.floor(totalInches / 12);
+    const inches = totalInches % 12;
+    const cm = Math.round(totalInches * 2.54);
+    
+    if (unit === 'ft') {
+      setHeightInContext(unit, feet, inches);
+    } else {
+      setHeightInContext(unit, undefined, undefined, cm);
     }
+    navigation.navigate('TrackingExperience' as never);
   };
 
   const handleBack = () => {
+    hapticFeedback.light();
     navigation.goBack();
   };
 
-  const handleDone = () => {
-    Keyboard.dismiss();
+  // Slider ranges in total inches
+  const minTotalInches = 36; // 3'0"
+  const maxTotalInches = 96; // 8'0"
+  
+  // Helper functions for display
+  const formatHeight = () => {
+    if (unit === 'ft') {
+      const feet = Math.floor(totalInches / 12);
+      const inches = totalInches % 12;
+      return `${feet}' ${inches}"`;
+    } else {
+      const cm = Math.round(totalInches * 2.54);
+      return `${cm} cm`;
+    }
   };
-
-  const KeyboardToolbar = () => (
-    <View style={styles.keyboardToolbar}>
-      <View style={styles.toolbarSpacer} />
-      <TouchableOpacity onPress={handleDone} style={styles.toolbarDoneButton}>
-        <Text style={styles.toolbarDoneText}>Done</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const isValidHeight = unit === 'ft' 
-    ? (feet && inches !== '' && 
-       parseInt(feet) >= 3 && parseInt(feet) <= 8 && 
-       parseInt(inches) >= 0 && parseInt(inches) <= 11)
-    : (height && parseInt(height) >= 90 && parseInt(height) <= 250);
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-        <View style={styles.container}>
-          {/* Progress Bar */}
-          <View style={styles.progressContainer}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '55%' }]} />
-        </View>
-      </View>
-
-      {/* Content */}
-      <View style={styles.content}>
-        <Text style={styles.title}>What's your height?</Text>
-        <Text style={styles.subtitle}>
-          Height helps us calculate your protein needs more accurately.
-        </Text>
-
-        {/* Unit Selector */}
-        <View style={styles.unitSelector}>
-          <TouchableOpacity
-            style={[styles.unitButton, unit === 'ft' && styles.unitButtonSelected]}
-            onPress={() => setUnit('ft')}
-          >
-            <Text style={[styles.unitButtonText, unit === 'ft' && styles.unitButtonTextSelected]}>
-              Feet
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.unitButton, unit === 'cm' && styles.unitButtonSelected]}
-            onPress={() => setUnit('cm')}
-          >
-            <Text style={[styles.unitButtonText, unit === 'cm' && styles.unitButtonTextSelected]}>
-              CM
-            </Text>
-          </TouchableOpacity>
+      <View style={styles.container}>
+        {/* Progress Bar */}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressHeader}>
+            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={24} color="#1A1A1A" />
+            </TouchableOpacity>
+            <View style={styles.backButton} />
+            <View style={styles.backButton} />
+          </View>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: '15%' }]} />
+          </View>
         </View>
 
-        {unit === 'ft' ? (
-          <View style={styles.feetInchesContainer}>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={feet}
-                onChangeText={setFeet}
-                placeholder="5"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                maxLength={1}
-                returnKeyType="next"
-                blurOnSubmit={false}
-                {...(Platform.OS === 'ios' && { inputAccessoryView: <KeyboardToolbar /> })}
-              />
-              <Text style={styles.unitLabel}>ft</Text>
-            </View>
-            
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                value={inches}
-                onChangeText={setInches}
-                placeholder="8"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                maxLength={2}
-                returnKeyType="done"
-                onSubmitEditing={() => Keyboard.dismiss()}
-                blurOnSubmit={true}
-                {...(Platform.OS === 'ios' && { inputAccessoryView: <KeyboardToolbar /> })}
-              />
-              <Text style={styles.unitLabel}>in</Text>
-            </View>
-          </View>
-        ) : (
-          <View style={[styles.inputContainer, styles.singleInputContainer]}>
-            <TextInput
-              style={styles.input}
-              value={height}
-              onChangeText={setHeight}
-              placeholder="175"
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-              returnKeyType="done"
-              onSubmitEditing={() => Keyboard.dismiss()}
-              blurOnSubmit={true}
-              {...(Platform.OS === 'ios' && { inputAccessoryView: <KeyboardToolbar /> })}
-            />
-            <Text style={styles.unitLabel}>cm</Text>
-          </View>
-        )}
-
-        {((unit === 'ft' && feet && inches) || (unit === 'cm' && height)) && !isValidHeight && (
-          <Text style={styles.errorText}>
-            Please enter a valid height {unit === 'ft' ? '(3\'0" - 8\'11")' : '(90-250 cm)'}
+        {/* Content */}
+        <View style={styles.content}>
+          <Text style={styles.title}>What's your height?</Text>
+          <Text style={styles.subtitle}>
+            Height helps us calculate your protein needs more accurately.
           </Text>
-        )}
+
+          {/* Unit Selector */}
+          <View style={styles.unitSelector}>
+            <TouchableOpacity
+              style={[styles.unitButton, unit === 'ft' && styles.unitButtonSelected]}
+              onPress={() => {
+                hapticFeedback.selection();
+                setUnit('ft');
+              }}
+            >
+              <Text style={[styles.unitButtonText, unit === 'ft' && styles.unitButtonTextSelected]}>
+                Feet
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.unitButton, unit === 'cm' && styles.unitButtonSelected]}
+              onPress={() => {
+                hapticFeedback.selection();
+                setUnit('cm');
+              }}
+            >
+              <Text style={[styles.unitButtonText, unit === 'cm' && styles.unitButtonTextSelected]}>
+                CM
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Next Button */}
-          <TouchableOpacity
-            style={[styles.nextButton, !isValidHeight && styles.nextButtonDisabled]}
-            onPress={handleNext}
-            disabled={!isValidHeight}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
-          </TouchableOpacity>
+          {/* Height Display */}
+          <View style={styles.heightDisplay}>
+            <Text style={styles.heightValue}>
+              {formatHeight()}
+            </Text>
+          </View>
+
+          {/* Single Height Slider */}
+          <View style={styles.sliderContainer}>
+            <Slider
+              style={styles.slider}
+              minimumValue={minTotalInches}
+              maximumValue={maxTotalInches}
+              value={totalInches}
+              step={1}
+              onValueChange={(value) => {
+                setTotalInches(value);
+                // Trigger haptic every 2 inches to avoid too many haptics
+                if (Math.abs(value - lastHapticValue) >= 2) {
+                  hapticFeedback.selection();
+                  setLastHapticValue(value);
+                }
+              }}
+              onSlidingStart={() => hapticFeedback.light()}
+              onSlidingComplete={(value) => {
+                hapticFeedback.medium();
+                setTotalInches(value);
+              }}
+              minimumTrackTintColor="#000000"
+              maximumTrackTintColor="#E5E5E5"
+            />
+            <View style={styles.sliderLabels}>
+              <View style={styles.tickMarks}>
+                {Array.from({ length: 21 }, (_, i) => (
+                  <View key={i} style={styles.tickMark} />
+                ))}
+              </View>
+              <Text style={styles.maxHeightLabel}>
+                {unit === 'ft' ? "8' 0\"" : '244 cm'}
+              </Text>
+            </View>
+          </View>
         </View>
-      </TouchableWithoutFeedback>
+
+        {/* Next Button */}
+        <TouchableOpacity
+          style={styles.nextButton}
+          onPress={handleNext}
+        >
+          <Text style={styles.nextButtonText}>Next</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -183,39 +165,38 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
   },
   progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 20,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  progressText: {
+    fontSize: 14,
+    color: '#6B6B6B',
+    textAlign: 'center',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  backArrow: {
-    fontSize: 24,
-    color: '#1A1A1A',
   },
   progressBar: {
-    flex: 1,
     height: 4,
     backgroundColor: '#E5E5E5',
     borderRadius: 2,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#2D2D2D',
     borderRadius: 2,
   },
   content: {
@@ -274,7 +255,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 29,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -323,13 +304,13 @@ const styles = StyleSheet.create({
   },
   toolbarDoneText: {
     fontSize: 17,
-    color: '#007AFF',
+    color: '#000000',
     fontWeight: '600',
   },
   nextButton: {
     backgroundColor: '#2D2D2D',
-    borderRadius: 12,
-    height: 50,
+    borderRadius: 29,
+    height: 58,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 20,
@@ -341,6 +322,70 @@ const styles = StyleSheet.create({
   nextButtonText: {
     fontSize: 18,
     fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  heightDisplay: {
+    alignItems: 'center',
+    marginBottom: 60,
+    marginTop: 80,
+  },
+  heightValue: {
+    fontSize: 48,
+    fontWeight: 'bold',
+    color: '#1A1A1A',
+  },
+  sliderContainer: {
+    paddingHorizontal: 10,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  sliderLabels: {
+    marginTop: 10,
+    position: 'relative',
+  },
+  tickMarks: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 10,
+    marginBottom: 15,
+  },
+  tickMark: {
+    width: 1,
+    height: 8,
+    backgroundColor: '#D1D1D1',
+  },
+  maxHeightLabel: {
+    fontSize: 14,
+    color: '#6B6B6B',
+    textAlign: 'right',
+    paddingRight: 10,
+  },
+  unitSelector: {
+    flexDirection: 'row',
+    backgroundColor: '#F0F0F0',
+    borderRadius: 29,
+    padding: 4,
+    marginTop: 30,
+    marginBottom: 10,
+  },
+  unitButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  unitButtonSelected: {
+    backgroundColor: '#000000',
+  },
+  unitButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#666666',
+  },
+  unitButtonTextSelected: {
     color: '#FFFFFF',
   },
 });

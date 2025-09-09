@@ -8,22 +8,27 @@ import Purchases, {
 import { Platform } from 'react-native';
 import { config } from './config';
 
-// Conditional import for Superwall to prevent crashes in simulator
-let Superwall: any = null;
-try {
-  Superwall = require('@superwall/react-native-superwall').default;
-} catch (error) {
-  console.warn('Superwall not available in simulator:', error);
-}
+// Note: Superwall is now initialized via expo-superwall in App.tsx with SuperwallProvider
 
 class PurchaseService {
   private initialized = false;
   private paywallDismissCallback: ((event: any) => void) | null = null;
+  
+  // Helper to get timestamp
+  private getTimestamp = () => new Date().toISOString().split('T')[1].slice(0, 12);
 
   async initialize() {
     if (this.initialized) return;
 
     console.log('Initializing purchase services...');
+    
+    // Debug environment variables
+    console.log('🔍 DEBUG: Environment variables check:');
+    console.log('🔍 DEBUG: Superwall API key exists:', !!config.superwall.apiKey);
+    console.log('🔍 DEBUG: Superwall API key preview:', config.superwall.apiKey ? config.superwall.apiKey.substring(0, 10) + '...' : 'NONE');
+    console.log('🔍 DEBUG: RevenueCat iOS key exists:', !!config.revenueCat.apiKeyIOS);
+    console.log('🔍 DEBUG: RevenueCat iOS key preview:', config.revenueCat.apiKeyIOS ? config.revenueCat.apiKeyIOS.substring(0, 10) + '...' : 'NONE');
+    console.log('🔍 DEBUG: Full RevenueCat iOS key for debugging:', config.revenueCat.apiKeyIOS);
 
     try {
       // Initialize RevenueCat
@@ -34,8 +39,25 @@ class PurchaseService {
       // Only initialize if we have public keys (start with appl_ or goog_)
       if (apiKey && (apiKey.startsWith('appl_') || apiKey.startsWith('goog_'))) {
         try {
-          Purchases.configure({ apiKey });
+          // Configure RevenueCat with sandbox support for development/TestFlight
+          const isDevelopment = config.environment === 'development' || config.environment === 'staging';
+          
+          Purchases.configure({ 
+            apiKey,
+            usesStoreKit2IfAvailable: true, // Enable StoreKit 2 for better sandbox support
+            shouldShowInAppMessagesAutomatically: false, // Prevent automatic paywall interference
+          });
+          
           console.log('✅ RevenueCat initialized successfully');
+          console.log('🏪 Environment:', config.environment);
+          console.log('📱 Sandbox mode:', isDevelopment ? 'ENABLED (automatic in dev/TestFlight)' : 'DISABLED (production)');
+          
+          // Add sandbox-specific logging
+          if (isDevelopment) {
+            console.log('🧪 SANDBOX: Ready for sandbox purchase testing');
+            console.log('🧪 SANDBOX: Use sandbox test users from App Store Connect');
+          }
+          
         } catch (error) {
           console.warn('⚠️ RevenueCat initialization failed:', error);
         }
@@ -45,94 +67,8 @@ class PurchaseService {
         console.log('ℹ️ RevenueCat: No API key configured, skipping initialization');
       }
 
-      // Initialize Superwall
-      if (config.superwall.apiKey && Superwall) {
-        try {
-          console.log('🔧 Attempting to initialize Superwall with key:', config.superwall.apiKey ? 'Key exists' : 'No key');
-          console.log('🔧 Superwall.shared available?', !!Superwall.shared);
-          
-          // Use correct object syntax for Superwall.configure
-          console.log('🔧 Configuring Superwall with API key');
-          await Superwall.configure({
-            apiKey: config.superwall.apiKey
-          });
-          console.log('✅ Superwall initialized successfully');
-
-          // Set up Superwall delegate if available
-          if (Superwall.shared && Superwall.shared.delegate !== undefined) {
-            Superwall.shared.delegate = {
-              handleSuperwallEvent: async (event: any) => {
-                console.log('🔵 Global Superwall Event:', event);
-                
-                // Handle different Superwall events
-                switch (event.type || event.name) {
-                  case 'paywall_close':
-                  case 'paywallClose':
-                    console.log('👋 Paywall closed globally');
-                    break;
-                  case 'paywall_dismiss':
-                  case 'paywallDismiss':
-                    console.log('👋 Paywall dismissed globally');
-                    // Check if this was a successful purchase dismiss
-                    if (event.result === 'purchased') {
-                      console.log('💰 Paywall dismissed with purchase - treating as success');
-                      await this.handleSuccessfulPurchase();
-                      
-                      // Check if we need to complete onboarding locally
-                      if (global.currentScreen === 'OnboardingScreen7') {
-                        console.log('🎯 OnboardingScreen7 detected - triggering local onboarding completion');
-                        if (global.onboardingCompleteLocally) {
-                          console.log('✅ Calling global navigation callback');
-                          global.onboardingCompleteLocally();
-                        } else {
-                          console.log('❌ Global navigation callback not found');
-                        }
-                      }
-                    } else {
-                      console.log('❌ Paywall dismissed without purchase - staying on current screen');
-                      // Don't navigate anywhere - just stay on the current screen
-                      // The paywall has been dismissed and user should remain where they were
-                      console.log('✅ Paywall dismissed - no navigation needed, staying on current screen');
-                    }
-                    break;
-                  case 'transaction_complete':
-                  case 'transactionComplete':
-                    console.log('💰 Purchase successful globally');
-                    await this.handleSuccessfulPurchase();
-                    
-                    // Check if we need to complete onboarding locally (for onboarding flow)
-                    console.log('🔄 Checking if local onboarding completion is needed...');
-                    console.log('🔍 Current screen:', global.currentScreen);
-                    
-                    if (global.currentScreen === 'OnboardingScreen7') {
-                      console.log('🎯 OnboardingScreen7 detected - triggering local onboarding completion');
-                      if (global.onboardingCompleteLocally) {
-                        console.log('✅ Calling global navigation callback');
-                        global.onboardingCompleteLocally();
-                      } else {
-                        console.log('❌ Global navigation callback not found');
-                      }
-                    } else {
-                      console.log('ℹ️ Not on OnboardingScreen7, no navigation needed');
-                    }
-                    break;
-                  case 'transaction_fail':
-                  case 'transactionFail':
-                    console.log('❌ Purchase failed globally');
-                    break;
-                }
-              },
-            };
-            console.log('✅ Superwall delegate set up successfully');
-          }
-        } catch (error) {
-          console.warn('⚠️ Superwall initialization failed:', error);
-        }
-      } else if (config.superwall.apiKey && !Superwall) {
-        console.log('ℹ️ Superwall: Package not available (likely simulator), skipping initialization');
-      } else {
-        console.log('ℹ️ Superwall: No API key configured, skipping initialization');
-      }
+      // Superwall is now initialized via expo-superwall in App.tsx with SuperwallProvider
+      // The new SDK handles all delegate callbacks automatically in PaywallScreen.tsx
 
       this.initialized = true;
       console.log('✅ Purchase services initialization completed');
@@ -186,15 +122,49 @@ class PurchaseService {
 
   async purchasePackage(packageToPurchase: PurchasesPackage): Promise<boolean> {
     try {
+      console.log('💳 Starting purchase for package:', packageToPurchase.identifier);
+      
+      // Enhanced sandbox logging
+      if (config.environment === 'development' || config.environment === 'staging') {
+        console.log('🧪 SANDBOX: Attempting sandbox purchase');
+        console.log('🧪 SANDBOX: Package details:', {
+          identifier: packageToPurchase.identifier,
+          price: packageToPurchase.product.priceString,
+          title: packageToPurchase.product.title,
+        });
+      }
+      
       const { customerInfo } = await Purchases.purchasePackage(packageToPurchase);
-      return this.isSubscriptionActive(customerInfo);
+      const isActive = this.isSubscriptionActive(customerInfo);
+      
+      console.log('✅ Purchase completed successfully, subscription active:', isActive);
+      
+      return isActive;
     } catch (error) {
       const purchaseError = error as PurchasesError;
       
       if (purchaseError.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
-        console.log('Purchase cancelled by user');
+        console.log('👋 Purchase cancelled by user');
       } else {
-        console.error('Purchase error:', purchaseError);
+        console.error('❌ Purchase error:', purchaseError);
+        
+        // Enhanced sandbox error debugging
+        if (config.environment === 'development' || config.environment === 'staging') {
+          console.log('🧪 SANDBOX: Purchase failed with error:', {
+            code: purchaseError.code,
+            message: purchaseError.message,
+            underlyingError: purchaseError.underlyingErrorMessage,
+          });
+          
+          // Common sandbox error guidance
+          if (purchaseError.message?.includes('sandbox')) {
+            console.log('🧪 SANDBOX: Sandbox-specific error detected');
+          } else if (purchaseError.message?.includes('not available')) {
+            console.log('🧪 SANDBOX: Product not available - check RevenueCat configuration');
+          } else if (purchaseError.message?.includes('user not allowed')) {
+            console.log('🧪 SANDBOX: Check sandbox test user is signed in to App Store');
+          }
+        }
       }
       
       return false;
@@ -214,9 +184,30 @@ class PurchaseService {
   async checkSubscriptionStatus(): Promise<boolean> {
     try {
       const customerInfo = await Purchases.getCustomerInfo();
-      return this.isSubscriptionActive(customerInfo);
+      const isActive = this.isSubscriptionActive(customerInfo);
+      
+      // Enhanced sandbox logging
+      if (config.environment === 'development' || config.environment === 'staging') {
+        console.log('🧪 SANDBOX: Customer info check result:', {
+          isActive,
+          entitlements: Object.keys(customerInfo.entitlements.active),
+          allEntitlements: Object.keys(customerInfo.entitlements.all),
+          originalAppUserId: customerInfo.originalAppUserId,
+        });
+      }
+      
+      return isActive;
     } catch (error) {
-      console.error('Error checking subscription status:', error);
+      console.error('❌ Error checking subscription status:', error);
+      
+      // Enhanced sandbox error logging
+      if (config.environment === 'development' || config.environment === 'staging') {
+        console.log('🧪 SANDBOX: Subscription check failed - this is normal if no sandbox user is signed in');
+        console.log('🧪 SANDBOX: To test purchases:');
+        console.log('🧪 SANDBOX: 1. Sign out of App Store in iOS Settings');
+        console.log('🧪 SANDBOX: 2. Use sandbox test user account when prompted');
+      }
+      
       return false;
     }
   }

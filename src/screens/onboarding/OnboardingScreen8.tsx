@@ -6,35 +6,38 @@ import { useOnboarding } from '../../context/OnboardingContext';
 import { Ionicons } from '@expo/vector-icons';
 import { hapticFeedback } from '../../utils/haptics';
 
-export default function OnboardingScreen1() {
+export default function OnboardingScreen8() {
   const navigation = useNavigation();
-  const { state, setFitnessGoal } = useOnboarding();
-  const [selectedGoal, setSelectedGoal] = useState<string>(state.data.fitnessGoal || '');
+  const { state, setCurrentTrackingMethod } = useOnboarding();
+  const [selectedOption, setSelectedOption] = useState<string>('');
 
-  const goals = [
+  const options = [
     {
-      id: 'lose-weight',
-      text: 'Hit Protein Goal - Lose weight',
+      id: 'no',
+      text: 'No',
+      icon: 'thumbs-down',
     },
     {
-      id: 'maintain',
-      text: 'Hit Protein Goal - Maintain',
-    },
-    {
-      id: 'gain-weight',
-      text: 'Hit Protein Goal - Gain weight',
+      id: 'yes',
+      text: 'Yes',
+      icon: 'thumbs-up',
     },
   ];
 
   useEffect(() => {
-    setSelectedGoal(state.data.fitnessGoal || '');
-  }, [state.data.fitnessGoal]);
+    // Check if there's already a value set
+    if (state?.data?.currentTrackingMethod) {
+      const hasTriedOthers = state.data.currentTrackingMethod !== "I don't track consistently" ? 'yes' : 'no';
+      setSelectedOption(hasTriedOthers);
+    }
+  }, [state?.data?.currentTrackingMethod]);
 
   const handleNext = () => {
-    if (selectedGoal) {
+    if (selectedOption) {
       hapticFeedback.medium();
-      setFitnessGoal(selectedGoal);
-      navigation.navigate('ExerciseType' as never);
+      // Store the response - we'll use this to inform later decisions
+      setCurrentTrackingMethod(selectedOption === 'yes' ? 'Has tried other methods' : 'Has not tried other methods');
+      navigation.navigate('ProteinAIResults' as never);
     }
   };
 
@@ -42,7 +45,6 @@ export default function OnboardingScreen1() {
     hapticFeedback.light();
     navigation.goBack();
   };
-
 
   return (
     <SafeAreaView style={styles.container}>
@@ -56,48 +58,56 @@ export default function OnboardingScreen1() {
           <View style={styles.backButton} />
         </View>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '30%' }]} />
+          <View style={[styles.progressFill, { width: '20%' }]} />
         </View>
       </View>
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.title}>What's your main goal with protein tracking?</Text>
-        <Text style={styles.subtitle}>
-          This helps us create your personalized protein recommendation.
-        </Text>
+        <Text style={styles.title}>Have you tried other ways to track protein</Text>
 
         <View style={styles.optionsContainer}>
-          {goals.map((goal, index) => (
-            <TouchableOpacity
-              key={goal.id}
-              style={[
-                styles.optionCard,
-                selectedGoal === goal.text && styles.optionCardSelected,
-              ]}
-              onPress={() => {
-                hapticFeedback.selection();
-                setSelectedGoal(goal.text);
-              }}
-            >
-              <Text
+          {options.map((option) => {
+            const isSelected = selectedOption === option.id;
+            
+            return (
+              <TouchableOpacity
+                key={option.id}
                 style={[
-                  styles.optionText,
-                  selectedGoal === goal.text && styles.optionTextSelected,
+                  styles.optionCard,
+                  isSelected && styles.optionCardSelected,
                 ]}
+                onPress={() => {
+                hapticFeedback.selection();
+                setSelectedOption(option.id);
+              }}
               >
-                {goal.text}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <View style={styles.optionContent}>
+                  <Ionicons 
+                    name={option.icon as any} 
+                    size={24} 
+                    color={isSelected ? '#FFFFFF' : '#6B6B6B'} 
+                  />
+                  <Text
+                    style={[
+                      styles.optionText,
+                      isSelected && styles.optionTextSelected,
+                    ]}
+                  >
+                    {option.text}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
       {/* Next Button */}
       <TouchableOpacity
-        style={[styles.nextButton, !selectedGoal && styles.nextButtonDisabled]}
+        style={[styles.nextButton, !selectedOption && styles.nextButtonDisabled]}
         onPress={handleNext}
-        disabled={!selectedGoal}
+        disabled={!selectedOption}
       >
         <Text style={styles.nextButtonText}>Next</Text>
       </TouchableOpacity>
@@ -147,21 +157,17 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingTop: 40,
   },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#1A1A1A',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6B6B6B',
-    marginBottom: 40,
-    lineHeight: 24,
+    marginBottom: 80,
+    lineHeight: 32,
   },
   optionsContainer: {
-    gap: 12,
+    gap: 16,
   },
   optionCard: {
     backgroundColor: '#FFFFFF',
@@ -178,6 +184,11 @@ const styles = StyleSheet.create({
   optionCardSelected: {
     borderColor: '#000000',
     backgroundColor: '#000000',
+  },
+  optionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   optionText: {
     fontSize: 18,

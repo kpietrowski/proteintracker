@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { supabase } from '../services/supabase';
+import { localStorageService } from '../services/localStorage';
 import { purchaseService } from '../services/purchases';
+import { navigationEvents } from '../services/eventEmitter';
 import OnboardingNavigator from './OnboardingNavigator';
 import MainTabNavigator from './MainTabNavigator';
 import VoiceInputModal from '../screens/VoiceInputModal';
@@ -12,46 +13,57 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const Stack = createStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkAuthAndSubscription();
+    checkOnboardingStatus();
     
-    // Listen for auth changes
-    const authListener = supabase.auth.onAuthStateChange((event, session) => {
-      setIsAuthenticated(!!session);
-      setIsLoading(false);
-    });
-
+    // Listen for onboarding completion event
+    const handleOnboardingComplete = async () => {
+      console.log('📱 === ROOT NAVIGATOR: RECEIVED ONBOARDING-COMPLETE EVENT ===');
+      console.log('📱 RootNavigator: Current hasCompletedOnboarding:', hasCompletedOnboarding);
+      console.log('📱 RootNavigator: Rechecking onboarding status...');
+      await checkOnboardingStatus();
+      console.log('📱 RootNavigator: Recheck complete, new hasCompletedOnboarding:', hasCompletedOnboarding);
+    };
+    
+    navigationEvents.on('onboarding-complete', handleOnboardingComplete);
+    
+    // Cleanup listener
     return () => {
-      authListener.data.subscription.unsubscribe();
+      navigationEvents.off('onboarding-complete', handleOnboardingComplete);
     };
   }, []);
 
-  const checkAuthAndSubscription = async () => {
+  const checkOnboardingStatus = async () => {
     try {
-      console.log('🔍 DEBUG: checkAuthAndSubscription called');
-      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔍 DEBUG: checkOnboardingStatus called');
       
-      // Check for mock authentication in development
-      const mockAuth = await AsyncStorage.getItem('mockAuthenticated');
-      console.log('🔍 DEBUG: session exists:', !!session);
-      console.log('🔍 DEBUG: mockAuth:', mockAuth);
+      // Check if onboarding is complete using local storage
+      const onboardingComplete = await localStorageService.isOnboardingComplete();
+      console.log('📱 DEBUG: Onboarding complete from local storage:', onboardingComplete);
       
-      if (session) {
-        console.log('🔍 DEBUG: User authenticated - showing main app');
-        setIsAuthenticated(true);
-      } else if (__DEV__ && mockAuth === 'true') {
-        console.log('🔍 DEBUG: Mock authenticated - showing main app');
-        setIsAuthenticated(true);
+      if (onboardingComplete) {
+        // Also verify that we have a user profile
+        const userProfile = await localStorageService.getUserProfile();
+        console.log('👤 DEBUG: User profile exists:', !!userProfile);
+        
+        if (userProfile) {
+          console.log('✅ DEBUG: Onboarding complete and user profile exists - showing main app');
+          setHasCompletedOnboarding(true);
+        } else {
+          console.log('⚠️ DEBUG: Onboarding marked complete but no user profile - showing onboarding');
+          setHasCompletedOnboarding(false);
+        }
       } else {
-        console.log('🔍 DEBUG: No session - showing onboarding');
-        setIsAuthenticated(false);
+        console.log('🔄 DEBUG: Onboarding not complete - showing onboarding flow');
+        setHasCompletedOnboarding(false);
       }
+      
     } catch (error) {
-      console.error('🔍 DEBUG: Error checking auth:', error);
-      setIsAuthenticated(false);
+      console.error('❌ DEBUG: Error checking onboarding status:', error);
+      setHasCompletedOnboarding(false);
     } finally {
       setIsLoading(false);
     }
@@ -63,17 +75,17 @@ export default function RootNavigator() {
   }
 
   const onNavigationStateChange = () => {
-    // Re-check subscription status when navigation state changes
-    // This will trigger when CommonActions.reset is called
-    checkAuthAndSubscription();
+    // Re-check onboarding status when navigation state changes
+    console.log('🔄 Navigation state changed - re-checking onboarding status...');
+    checkOnboardingStatus();
   };
 
-  console.log('🔍 DEBUG: RootNavigator render - isAuthenticated:', isAuthenticated, 'isLoading:', isLoading);
+  console.log('🔍 DEBUG: RootNavigator render - hasCompletedOnboarding:', hasCompletedOnboarding, 'isLoading:', isLoading);
 
   return (
     <NavigationContainer onStateChange={onNavigationStateChange}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {!isAuthenticated ? (
+        {!hasCompletedOnboarding ? (
           <Stack.Screen 
             name="Onboarding" 
             component={OnboardingNavigator}

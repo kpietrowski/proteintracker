@@ -19,7 +19,7 @@
     <key>CFBundlePackageType</key>
     <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>1.0.1</string>
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleURLTypes</key>
@@ -38,7 +38,7 @@
       </dict>
     </array>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>37</string>
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>LSMinimumSystemVersion</key>
@@ -53,9 +53,11 @@
       <true/>
     </dict>
     <key>NSCameraUsageDescription</key>
-    <string>This app uses the camera to scan food barcodes for easier protein logging.</string>
+    <string>Protein AI uses your camera to scan food barcodes and labels, making it faster to log protein-rich foods and track your daily goals.</string>
     <key>NSMicrophoneUsageDescription</key>
-    <string>This app uses the microphone to record voice input for logging protein intake.</string>
+    <string>Protein AI uses your microphone to allow voice input for quickly and easily logging your protein intake throughout the day.</string>
+    <key>NSUserNotificationsUsageDescription</key>
+    <string>Protein AI uses notifications to help you track your protein goals, celebrate milestones, and send helpful reminders throughout your fitness journey.</string>
     <key>UILaunchStoryboardName</key>
     <string>SplashScreen</string>
     <key>UIRequiredDeviceCapabilities</key>

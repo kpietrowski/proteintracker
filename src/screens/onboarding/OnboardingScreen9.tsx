@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { Ionicons } from '@expo/vector-icons';
+import { hapticFeedback } from '../../utils/haptics';
 
 export default function OnboardingScreen9() {
   const navigation = useNavigation();
@@ -16,32 +17,22 @@ export default function OnboardingScreen9() {
     {
       id: 'no-exercise',
       text: 'I don\'t exercise regularly',
-      icon: 'bed-outline',
-      iconLib: 'Ionicons',
     },
     {
       id: '1-2-times',
       text: '1-2 times per week',
-      icon: 'walk',
-      iconLib: 'Ionicons',
     },
     {
       id: '3-4-times',
       text: '3-4 times per week',
-      icon: 'fitness',
-      iconLib: 'Ionicons',
     },
     {
       id: '5-6-times',
       text: '5-6 times per week',
-      icon: 'barbell',
-      iconLib: 'Ionicons',
     },
     {
       id: 'daily',
       text: 'Daily (7+ times per week)',
-      icon: 'trophy',
-      iconLib: 'Ionicons',
     },
   ];
 
@@ -52,29 +43,17 @@ export default function OnboardingScreen9() {
 
   const handleNext = () => {
     if (selectedFrequency) {
+      hapticFeedback.medium();
       setExerciseFrequency(selectedFrequency);
-      // If user doesn't exercise regularly, skip to Screen 11 (Dream Outcome)
-      if (selectedFrequency === 'I don\'t exercise regularly') {
-        navigation.navigate('DreamOutcome' as never);
-      } else {
-        navigation.navigate('ExerciseType' as never);
-      }
+      navigation.navigate('Weight' as never);
     }
   };
 
   const handleBack = () => {
+    hapticFeedback.light();
     navigation.goBack();
   };
 
-  const renderIcon = (frequency: any) => {
-    return (
-      <Ionicons 
-        name={frequency.icon} 
-        size={24} 
-        color={(selectedFrequency && selectedFrequency === frequency.text) ? '#007AFF' : '#6B6B6B'} 
-      />
-    );
-  };
 
   // Early return if state is not ready
   if (!state) {
@@ -93,13 +72,13 @@ export default function OnboardingScreen9() {
       <View style={styles.progressContainer}>
         <View style={styles.progressHeader}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="#007AFF" />
+            <Ionicons name="chevron-back" size={24} color="#1A1A1A" />
           </TouchableOpacity>
-          <Text style={styles.progressText}>Step 9 of 13</Text>
+          <View style={styles.backButton} />
           <View style={styles.backButton} />
         </View>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '69.2%' }]} />
+          <View style={[styles.progressFill, { width: '40%' }]} />
         </View>
       </View>
 
@@ -118,10 +97,11 @@ export default function OnboardingScreen9() {
                 styles.optionCard,
                 (selectedFrequency && selectedFrequency === frequency.text) && styles.optionCardSelected,
               ]}
-              onPress={() => setSelectedFrequency(frequency.text)}
+              onPress={() => {
+                hapticFeedback.selection();
+                setSelectedFrequency(frequency.text);
+              }}
             >
-              <View style={styles.optionContent}>
-                {renderIcon(frequency)}
                 <Text
                   style={[
                     styles.optionText,
@@ -130,7 +110,6 @@ export default function OnboardingScreen9() {
                 >
                   {frequency.text}
                 </Text>
-              </View>
             </TouchableOpacity>
           ))}
         </View>
@@ -168,14 +147,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   progressText: {
     fontSize: 14,
@@ -189,7 +163,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#000000',
     borderRadius: 2,
   },
   content: {
@@ -213,7 +187,7 @@ const styles = StyleSheet.create({
   },
   optionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 29,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -223,28 +197,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  optionContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
   optionCardSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#F0F8FF',
+    borderColor: '#000000',
+    backgroundColor: '#000000',
   },
   optionText: {
     fontSize: 18,
     fontWeight: '600',
     color: '#1A1A1A',
-    flex: 1,
+    textAlign: 'left',
   },
   optionTextSelected: {
-    color: '#007AFF',
+    color: '#FFFFFF',
   },
   nextButton: {
     backgroundColor: '#2D2D2D',
-    borderRadius: 12,
-    height: 50,
+    borderRadius: 29,
+    height: 58,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 20,

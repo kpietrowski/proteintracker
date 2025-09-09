@@ -2,21 +2,19 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 import { OnboardingStackParamList } from '../types';
 
-// New 13-screen onboarding flow
+// Onboarding screens
 import OnboardingScreen1 from '../screens/onboarding/OnboardingScreen1'; // Primary Goal
-import OnboardingScreen2New from '../screens/onboarding/OnboardingScreen2-new'; // Current Tracking Method
-import OnboardingScreen3 from '../screens/onboarding/OnboardingScreen3'; // Nutrition Challenges
-import OnboardingScreen4New from '../screens/onboarding/OnboardingScreen4-new'; // Goal Importance
 
 // Existing screens (will be renamed/reordered)
 import OnboardingScreen2 from '../screens/onboarding/OnboardingScreen2'; // Gender (will become Screen 8) 
 import OnboardingScreen9 from '../screens/onboarding/OnboardingScreen9'; // Exercise Frequency (Screen 9)
 import OnboardingScreen10 from '../screens/onboarding/OnboardingScreen10'; // Exercise Type (Screen 10)
 import OnboardingScreen11 from '../screens/onboarding/OnboardingScreen11'; // Dream Outcome (Screen 11)
+import OnboardingScreen12 from '../screens/onboarding/OnboardingScreen12'; // Personalized protein target
 import OnboardingScreen4 from '../screens/onboarding/OnboardingScreen4'; // Age (will become Screen 5)
 import OnboardingScreen5 from '../screens/onboarding/OnboardingScreen5'; // Height (will become Screen 6)
 import OnboardingScreen6 from '../screens/onboarding/OnboardingScreen6'; // Weight (will become Screen 7)
-import OnboardingScreen7 from '../screens/onboarding/OnboardingScreen7-hybrid'; // HYBRID: Working logic + Beautiful UI with debug logging
+import OnboardingScreen7 from '../screens/onboarding/OnboardingScreen7'; // Final protein calculation screen
 import OnboardingScreen8 from '../screens/onboarding/OnboardingScreen8'; // Tracking Experience (Screen 4)
 import OnboardingScreen13 from '../screens/onboarding/OnboardingScreen13'; // Protein AI Results (Screen 5)
 import OnboardingScreen14 from '../screens/onboarding/OnboardingScreen14'; // Make gains 2X faster (Screen 10)
@@ -67,6 +65,7 @@ export default function OnboardingNavigator() {
         <Stack.Screen name="NotificationPermission" component={OnboardingScreen20} />
         <Stack.Screen name="Loading" component={OnboardingScreenLoading} />
         <Stack.Screen name="DreamOutcome" component={OnboardingScreen11} />
+        <Stack.Screen name="PersonalizedProteinTarget" component={OnboardingScreen12} />
         <Stack.Screen name="Final" component={OnboardingScreen7} />
         
         {/* Temporary - keeping for backward compatibility */}

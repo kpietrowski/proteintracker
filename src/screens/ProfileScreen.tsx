@@ -12,7 +12,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors } from '../constants/colors';
 import { User, ProfileStats } from '../types';
-import { supabase, getUserProfile, updateUserProfile, signOut } from '../services/supabase';
+import { localStorageService } from '../services/localStorage';
 import { purchaseService } from '../services/purchases';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -31,14 +31,37 @@ export default function ProfileScreen() {
 
   const loadUserData = async () => {
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) {
-        const profile = await getUserProfile(authUser.id);
-        if (profile) {
-          setUser(profile);
-          setTempName(profile.name);
-          setTempGoal(profile.dailyProteinGoal.toString());
-        }
+      // Load user profile from local storage
+      const profile = await localStorageService.getUserProfile();
+      if (profile) {
+        const user: User = {
+          id: profile.id,
+          name: profile.name,
+          email: '', // We don't store email in local profile
+          dailyProteinGoal: profile.proteinGoal,
+          createdAt: new Date(profile.createdAt),
+          updatedAt: new Date(profile.updatedAt),
+          subscriptionStatus: 'active', // Default for local users
+          onboardingCompleted: true,
+        };
+        setUser(user);
+        setTempName(user.name);
+        setTempGoal(user.dailyProteinGoal.toString());
+      } else {
+        // No profile found - create default user
+        const defaultUser: User = {
+          id: 'local-user',
+          name: 'User',
+          email: '',
+          dailyProteinGoal: 150,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          subscriptionStatus: 'none',
+          onboardingCompleted: false,
+        };
+        setUser(defaultUser);
+        setTempName(defaultUser.name);
+        setTempGoal(defaultUser.dailyProteinGoal.toString());
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -46,28 +69,48 @@ export default function ProfileScreen() {
   };
 
   const loadWeeklyStats = async () => {
-    // This would fetch from database, but for now using mock data
+    // Weekly stats feature - commented out for initial release
+    // Will be implemented with actual data tracking
+    /*
     setWeeklyStats({
       goalsHit: 5,
       totalProtein: 640,
     });
+    */
   };
 
   const handleEditName = () => {
+    setTempName(user?.name || '');
     setIsEditingName(true);
   };
 
   const handleSaveName = async () => {
-    if (!user) return;
+    // If name is empty, use placeholder or original
+    const nameToSave = tempName.trim() || user?.name || 'User';
     
     try {
-      await updateUserProfile(user.id, { name: tempName });
-      setUser({ ...user, name: tempName });
+      // Update name in local storage
+      if (user) {
+        await localStorageService.updateUserProfile({ name: nameToSave });
+        setUser({ ...user, name: nameToSave });
+        console.log('✅ Name updated in local storage:', nameToSave);
+      }
+      
       setIsEditingName(false);
     } catch (error) {
       console.error('Error updating name:', error);
       Alert.alert('Error', 'Failed to update name');
     }
+  };
+
+  const handleCancelEdit = () => {
+    setTempName(user?.name || '');
+    setIsEditingName(false);
+  };
+
+  const handleCancelGoalEdit = () => {
+    setTempGoal(user?.dailyProteinGoal.toString() || '140');
+    setIsEditingGoal(false);
   };
 
   const handleEditGoal = () => {
@@ -84,9 +127,20 @@ export default function ProfileScreen() {
     }
     
     try {
-      await updateUserProfile(user.id, { dailyProteinGoal: goalNum });
+      // Update protein goal in local storage
+      await localStorageService.updateUserProfile({ proteinGoal: goalNum });
       setUser({ ...user, dailyProteinGoal: goalNum });
+      
       setIsEditingGoal(false);
+      
+      // Show confirmation that goal has been updated for today and future
+      Alert.alert(
+        'Goal Updated', 
+        `Your daily protein goal has been updated to ${goalNum}g for today and all future days.`
+      );
+      
+      console.log('✅ Protein goal updated in local storage:', goalNum);
+      
     } catch (error) {
       console.error('Error updating goal:', error);
       Alert.alert('Error', 'Failed to update goal');
@@ -118,14 +172,9 @@ export default function ProfileScreen() {
             try {
               // Get current date key for today's protein data
               const dateKey = new Date().toISOString().split('T')[0];
-              const todayStorageKey = `demo_protein_${dateKey}`;
               
-              // Only remove today's protein entries
-              await AsyncStorage.removeItem(todayStorageKey);
-              
-              // Debug: Check if mockAuthenticated is still there
-              const mockAuth = await AsyncStorage.getItem('mockAuthenticated');
-              console.log('After reset - mockAuthenticated:', mockAuth);
+              // Clear today's protein entries using localStorage service
+              await localStorageService.clearProteinEntriesForDate(dateKey);
               
               Alert.alert('Success', 'Today\'s protein data has been reset to zero!');
             } catch (error) {
@@ -149,11 +198,11 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Clear ALL AsyncStorage data
-              await AsyncStorage.clear();
+              // Clear all local storage data
+              await localStorageService.clearAllData();
               
-              // Sign out from Supabase
-              await supabase.auth.signOut();
+              // Clear any remaining AsyncStorage data
+              await AsyncStorage.clear();
               
               Alert.alert('Success', 'Everything reset! The app will return to onboarding.');
             } catch (error) {
@@ -166,21 +215,26 @@ export default function ProfileScreen() {
     );
   };
 
-  const handleSignOut = async () => {
+  const handleClearData = async () => {
     Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
+      'Clear All Data',
+      'Are you sure you want to clear all local data? This action cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Sign Out',
+          text: 'Clear Data',
           style: 'destructive',
           onPress: async () => {
             try {
-              await signOut();
+              await localStorageService.clearAllData();
               await purchaseService.logOut();
+              console.log('✅ All local data cleared');
+              // Reset user state
+              setUser(null);
+              // The app should redirect to onboarding automatically
             } catch (error) {
-              console.error('Error signing out:', error);
+              console.error('Error clearing data:', error);
+              Alert.alert('Error', 'Failed to clear data');
             }
           },
         },
@@ -190,6 +244,25 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header with Save/Cancel Buttons */}
+      {(isEditingName || isEditingGoal) && (
+        <View style={styles.editHeader}>
+          <TouchableOpacity 
+            style={styles.cancelButton} 
+            onPress={isEditingName ? handleCancelEdit : handleCancelGoalEdit}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+          <View style={styles.spacer} />
+          <TouchableOpacity 
+            style={styles.saveButton} 
+            onPress={isEditingName ? handleSaveName : handleSaveGoal}
+          >
+            <Text style={styles.saveButtonText}>Save</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <View style={styles.header}>
@@ -210,8 +283,9 @@ export default function ProfileScreen() {
                   style={styles.input}
                   value={tempName}
                   onChangeText={setTempName}
+                  placeholder="Add your name"
+                  placeholderTextColor={colors.text.secondary}
                   autoFocus
-                  onBlur={handleSaveName}
                   onSubmitEditing={handleSaveName}
                 />
               ) : (
@@ -236,7 +310,6 @@ export default function ProfileScreen() {
                   onChangeText={setTempGoal}
                   keyboardType="numeric"
                   autoFocus
-                  onBlur={handleSaveGoal}
                   onSubmitEditing={handleSaveGoal}
                 />
               ) : (
@@ -281,6 +354,7 @@ export default function ProfileScreen() {
 
         {/* Settings */}
         <View style={styles.settingsSection}>
+          {/* Commented out unimplemented features for App Store submission
           <TouchableOpacity style={styles.settingItem}>
             <Text style={styles.settingText}>Notifications</Text>
             <Text style={styles.settingArrow}>›</Text>
@@ -305,7 +379,9 @@ export default function ProfileScreen() {
             <Text style={styles.settingText}>Support</Text>
             <Text style={styles.settingArrow}>›</Text>
           </TouchableOpacity>
+          */}
           
+          {/* Testing features removed for App Store submission
           <TouchableOpacity style={styles.settingItem} onPress={handleClearTestData}>
             <Text style={[styles.settingText, { color: colors.secondary.orange }]}>Reset Today's Protein</Text>
             <Text style={styles.settingArrow}>🗑️</Text>
@@ -315,11 +391,12 @@ export default function ProfileScreen() {
             <Text style={[styles.settingText, { color: '#FF0000' }]}>Full Reset to Onboarding</Text>
             <Text style={styles.settingArrow}>🔄</Text>
           </TouchableOpacity>
+          */}
         </View>
 
         {/* Sign Out Button */}
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Text style={styles.signOutText}>Sign Out</Text>
+        <TouchableOpacity style={styles.signOutButton} onPress={handleClearData}>
+          <Text style={styles.signOutText}>Clear All Data</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -330,6 +407,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.main,
+  },
+  editHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: colors.background.main,
+  },
+  spacer: {
+    flex: 1,
+  },
+  cancelButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  cancelButtonText: {
+    color: colors.text.secondary,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  saveButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: colors.primary.teal,
+    borderRadius: 20,
+  },
+  saveButtonText: {
+    color: colors.text.white,
+    fontSize: 16,
+    fontWeight: '600',
   },
   header: {
     alignItems: 'center',

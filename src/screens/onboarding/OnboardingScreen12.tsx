@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { Ionicons } from '@expo/vector-icons';
+import { hapticFeedback } from '../../utils/haptics';
 
 export default function OnboardingScreen12() {
   const navigation = useNavigation();
@@ -48,29 +49,77 @@ export default function OnboardingScreen12() {
   }, [onboardingContext?.state?.data]);
 
   const calculateProteinGoal = (data: any) => {
-    // Simplified calculation - in real app this would use the full algorithm
-    let baseGoal = 140; // Default
+    // Enhanced calculation using additive approach
+    // Base recommendation: ~1g per pound for men, 0.9g for women
     
-    // Adjust based on weight if available
-    if (data.weightLbs) {
-      baseGoal = Math.round(data.weightLbs * 0.8);
-    } else if (data.weightKg) {
-      baseGoal = Math.round(data.weightKg * 1.8);
+    // Get weight in pounds
+    let weightLbs = data.weightLbs || (data.weightKg ? data.weightKg * 2.205 : 150); // Default 150 lbs
+    
+    // Start with base multiplier based on sex
+    let baseMultiplier = (data.sex === 'male' || data.sex === 'Male') ? 1.0 : 0.9;
+    
+    // Add adjustments based on activity level (collected but not previously used!)
+    const activityAdjustments: { [key: string]: number } = {
+      'sedentary': -0.2,      // 0.8g/lb total
+      'lightly_active': -0.1,  // 0.9g/lb total
+      'moderately_active': 0.0, // 1.0g/lb total
+      'very_active': 0.15,     // 1.15g/lb total
+      'extremely_active': 0.3  // 1.3g/lb total
+    };
+    
+    // Add adjustment for fitness goal
+    const goalAdjustments: { [key: string]: number } = {
+      'Hit Protein Goal - Lose weight': 0.1,  // +0.1g/lb (preserve muscle in deficit)
+      'Hit Protein Goal - Maintain': 0.0,     // No change
+      'Hit Protein Goal - Gain weight': 0.15  // +0.15g/lb (support muscle growth)
+    };
+    
+    // Add adjustment for exercise type (if strength training)
+    const exerciseTypeAdjustment = 
+      (data.exerciseType === 'strength' || data.exerciseType === 'both') ? 0.1 : 0.0;
+    
+    // Add age adjustment (older adults need more protein)
+    let ageAdjustment = 0;
+    if (data.age >= 65) {
+      ageAdjustment = 0.15; // +0.15g/lb for 65+
+    } else if (data.age >= 50) {
+      ageAdjustment = 0.1;  // +0.1g/lb for 50-64
     }
     
-    // Adjust based on goal
-    if (data.fitnessGoal?.includes('muscle')) {
-      baseGoal = Math.round(baseGoal * 1.3);
-    } else if (data.fitnessGoal?.includes('weight')) {
-      baseGoal = Math.round(baseGoal * 1.4);
-    }
+    // Calculate total multiplier (additive, not multiplicative!)
+    let totalMultiplier = baseMultiplier + 
+      (activityAdjustments[data.activityLevel] || 0) +
+      (goalAdjustments[data.fitnessGoal] || 0) +
+      exerciseTypeAdjustment +
+      ageAdjustment;
     
-    // Round to nearest 5
-    return Math.round(baseGoal / 5) * 5;
+    // Apply reasonable bounds (0.8 to 1.5 g/lb)
+    totalMultiplier = Math.max(0.8, Math.min(1.5, totalMultiplier));
+    
+    // Calculate protein goal
+    let proteinGoal = Math.round(weightLbs * totalMultiplier);
+    
+    // Round to nearest 5 for cleaner numbers
+    proteinGoal = Math.round(proteinGoal / 5) * 5;
+    
+    // Apply reasonable min/max limits
+    proteinGoal = Math.max(50, Math.min(300, proteinGoal)); // 50g min, 300g max
+    
+    console.log('Protein calculation:', {
+      weight: weightLbs,
+      baseMultiplier,
+      activityLevel: data.activityLevel,
+      fitnessGoal: data.fitnessGoal,
+      totalMultiplier,
+      finalGoal: proteinGoal
+    });
+    
+    return proteinGoal;
   };
 
   const handleNext = () => {
     if (selectedAdjustment && onboardingContext?.setProteinGoals) {
+      hapticFeedback.success();
       let finalGoal = calculatedGoal;
       
       const selectedOption = adjustmentOptions.find(opt => opt.text === selectedAdjustment);
@@ -84,6 +133,7 @@ export default function OnboardingScreen12() {
   };
 
   const handleBack = () => {
+    hapticFeedback.light();
     navigation.goBack();
   };
 
@@ -96,7 +146,7 @@ export default function OnboardingScreen12() {
       <Ionicons 
         name={option.icon} 
         size={24} 
-        color={isSelected ? '#007AFF' : '#6B6B6B'} 
+        color={isSelected ? '#000000' : '#6B6B6B'} 
       />
     );
   };
@@ -107,13 +157,13 @@ export default function OnboardingScreen12() {
       <View style={styles.progressContainer}>
         <View style={styles.progressHeader}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="#007AFF" />
+            <Ionicons name="chevron-back" size={24} color="#1A1A1A" />
           </TouchableOpacity>
-          <Text style={styles.progressText}>Step 12 of 13</Text>
+          <View style={styles.backButton} />
           <View style={styles.backButton} />
         </View>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '92.3%' }]} />
+          <View style={[styles.progressFill, { width: '90%' }]} />
         </View>
       </View>
 
@@ -152,7 +202,10 @@ export default function OnboardingScreen12() {
                     styles.optionCard,
                     isSelected && styles.optionCardSelected,
                   ]}
-                  onPress={() => setSelectedAdjustment(option.text)}
+                  onPress={() => {
+                  hapticFeedback.selection();
+                  setSelectedAdjustment(option.text);
+                }}
                 >
                   <View style={styles.optionContent}>
                     {renderIcon(option)}
@@ -204,14 +257,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
   },
   progressText: {
     fontSize: 14,
@@ -225,7 +273,7 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#000000',
     borderRadius: 2,
   },
   scrollContent: {
@@ -257,7 +305,7 @@ const styles = StyleSheet.create({
   goalNumber: {
     fontSize: 48,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#000000',
     marginBottom: 8,
   },
   goalUnit: {
@@ -292,7 +340,7 @@ const styles = StyleSheet.create({
   },
   optionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 29,
     padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -308,22 +356,23 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   optionCardSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#F0F8FF',
+    borderColor: '#000000',
+    backgroundColor: '#F5F5F5',
   },
   optionText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1A1A1A',
     flex: 1,
+    textAlign: 'left',
   },
   optionTextSelected: {
-    color: '#007AFF',
+    color: '#000000',
   },
   nextButton: {
     backgroundColor: '#2D2D2D',
-    borderRadius: 12,
-    height: 50,
+    borderRadius: 29,
+    height: 58,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 20,

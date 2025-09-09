@@ -15,7 +15,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { whisperService } from '../services/whisper';
-import { supabase, addProteinEntry } from '../services/supabase';
+import { localStorageService } from '../services/localStorage';
+import { notificationService } from '../services/notificationService';
 import { colors } from '../constants/colors';
 import { VoiceInputResult } from '../types';
 import { hapticFeedback } from '../utils/haptics';
@@ -92,9 +93,12 @@ export default function VoiceInputModal() {
       setResult(result);
       setAdjustedProtein(result?.proteinAmount || null);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to process recording:', error);
-      Alert.alert('Error', 'Failed to process your recording. Please try again.');
+      
+      // Show more specific error message
+      const errorMessage = error.message || 'Failed to process your recording. Please try again.';
+      Alert.alert('Voice Input Error', errorMessage);
     } finally {
       setIsProcessing(false);
     }
@@ -115,46 +119,19 @@ export default function VoiceInputModal() {
     try {
       setIsProcessing(true);
       
-      const { data: { user } } = await supabase.auth.getUser();
+      // Save protein entry to local storage
+      console.log('Saving protein entry to local storage');
       
-      // Handle demo mode - if no user, save to AsyncStorage for demo
-      if (!user) {
-        console.log('Demo mode - saving protein entry locally');
-        
-        // Import AsyncStorage at the top of the file
-        const AsyncStorage = require('@react-native-async-storage/async-storage').default;
-        
-        // Get current date key
-        const dateKey = new Date().toISOString().split('T')[0];
-        const storageKey = `demo_protein_${dateKey}`;
-        
-        // Get existing entries for today
-        const existingData = await AsyncStorage.getItem(storageKey);
-        const todayEntries = existingData ? JSON.parse(existingData) : [];
-        
-        // Add new entry
-        todayEntries.push({
-          amount: adjustedProtein,
-          description: result.foodItem || result.transcript,
-          timestamp: new Date().toISOString(),
-          source: 'voice'
-        });
-        
-        // Save back to storage
-        await AsyncStorage.setItem(storageKey, JSON.stringify(todayEntries));
-        
-        // Navigate back to home screen immediately
-        navigation.goBack();
-        return;
-      }
+      const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      await localStorageService.addProteinEntry(
+        today,
+        adjustedProtein,
+        result.foodItem || result.transcript,
+        'voice'
+      );
 
-      await addProteinEntry({
-        userId: user.id,
-        date: new Date(),
-        amount: adjustedProtein,
-        description: result.foodItem || result.transcript,
-        source: 'voice',
-      });
+      // Update the 7 PM notification if it's for today
+      await notificationService.updateProteinLeftNotification(adjustedProtein);
 
       // Navigate back to home screen immediately
       navigation.goBack();
@@ -182,14 +159,18 @@ export default function VoiceInputModal() {
       <Pressable style={styles.backdrop} onPress={handleClose} />
       <View style={styles.modalContent}>
         <View style={styles.header}>
+          <View style={styles.brandContainer}>
+            <View style={styles.logoRow}>
+              <View style={styles.appIcon}>
+                <View style={styles.appIconInner} />
+              </View>
+              <Text style={styles.title}>Protein AI</Text>
+            </View>
+            <Text style={styles.subtitle}>AI-powered protein tracking</Text>
+          </View>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Text style={styles.closeText}>✕</Text>
           </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>Protein AI</Text>
-            <Text style={styles.subtitle}>AI-powered protein tracking</Text>
-          </View>
-          <View style={{ width: 30 }} />
         </View>
 
         <View style={styles.content}>
@@ -197,7 +178,7 @@ export default function VoiceInputModal() {
           <>
             <View style={styles.instructionContainer}>
               <Text style={styles.instruction}>
-                Tap the microphone and say something like:
+                {isRecording ? 'Listening...' : 'Tap the microphone and say something like:'}
               </Text>
               <View style={styles.exampleContainer}>
                 <Text style={styles.example}>"25 grams of protein"</Text>
@@ -222,6 +203,8 @@ export default function VoiceInputModal() {
                 >
                   {isProcessing ? (
                     <ActivityIndicator size="large" color={colors.text.white} />
+                  ) : isRecording ? (
+                    <Text style={styles.doneText}>Done</Text>
                   ) : (
                     <Text style={styles.micIcon}>🎤</Text>
                   )}
@@ -229,7 +212,7 @@ export default function VoiceInputModal() {
               </TouchableOpacity>
 
               <Text style={styles.statusText}>
-                {isRecording ? 'Listening...' : isProcessing ? 'Processing...' : 'Tap to speak'}
+                {isRecording ? '' : isProcessing ? 'Processing...' : 'Tap to speak'}
               </Text>
             </View>
           </>
@@ -351,31 +334,54 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    paddingHorizontal: 15,
-    paddingTop: 15,
-    paddingBottom: 8,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 15,
+  },
+  brandContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  logoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  appIcon: {
+    width: 24,
+    height: 24,
+    backgroundColor: colors.secondary.orange,
+    borderRadius: 6,
+    marginRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  appIconInner: {
+    width: 12,
+    height: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 3,
+    opacity: 0.9,
   },
   closeButton: {
-    padding: 5,
+    padding: 8,
+    marginTop: -4,
   },
   closeText: {
     fontSize: 24,
     color: colors.text.secondary,
   },
   title: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: '700',
-    color: colors.text.primary,
+    color: colors.secondary.orange,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 15,
     color: colors.text.secondary,
-  },
-  titleContainer: {
-    flex: 1,
-    alignItems: 'center',
+    fontWeight: '500',
   },
   content: {
     flex: 1,
@@ -388,13 +394,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     marginTop: 30,
+    minHeight: 160, // Increased fixed height to accommodate all content
   },
   instruction: {
     fontSize: 24,
     fontWeight: '600',
     color: colors.text.primary,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
+    minHeight: 64, // Increased to handle both single line "Listening..." and multi-line instruction
+    lineHeight: 32,
   },
   exampleContainer: {
     backgroundColor: '#FAFBFC',
@@ -422,10 +431,11 @@ const styles = StyleSheet.create({
   micSection: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 25,
+    marginTop: 30, // Fixed margin for consistent spacing
+    minHeight: 140, // Fixed height to prevent shifting
   },
   micContainer: {
-    marginBottom: 8,
+    marginBottom: 12, // Fixed margin
   },
   micButton: {
     width: 100,
@@ -446,11 +456,17 @@ const styles = StyleSheet.create({
   micIcon: {
     fontSize: 40,
   },
+  doneText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text.white,
+  },
   statusText: {
     fontSize: 16,
     fontWeight: '500',
     color: colors.text.secondary,
     textAlign: 'center',
+    minHeight: 20, // Fixed height to prevent button position shifting
   },
   resultContainer: {
     width: '100%',

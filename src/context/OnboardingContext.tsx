@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { localStorageService } from '../services/localStorage';
 
 export interface OnboardingData {
   // Primary goal (Screen 1)
@@ -23,6 +24,10 @@ export interface OnboardingData {
   weightUnit: 'lbs' | 'kg';
   weightLbs?: number;
   weightKg?: number;
+  
+  // Desired weight (Screen 11)
+  desiredWeightLbs?: number;
+  desiredWeightKg?: number;
   
   // Biological sex
   sex: string;
@@ -211,6 +216,7 @@ interface OnboardingContextType {
   clearData: () => void;
   saveToStorage: () => Promise<void>;
   loadFromStorage: () => Promise<void>;
+  saveProfileToLocalStorage: () => Promise<void>;
 }
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -312,6 +318,22 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     }
   };
 
+  const saveProfileToLocalStorage = async () => {
+    try {
+      console.log('💾 Saving complete user profile to local storage...');
+      await localStorageService.saveUserProfile(state.data);
+      console.log('✅ User profile saved successfully!');
+      
+      // Clear onboarding data since it's now permanently saved
+      dispatch({ type: 'CLEAR_DATA' });
+      await AsyncStorage.removeItem(STORAGE_KEY);
+      
+    } catch (error) {
+      console.error('❌ Failed to save profile to local storage:', error);
+      throw error;
+    }
+  };
+
   const value: OnboardingContextType = {
     state,
     // Screen 1
@@ -337,6 +359,7 @@ export function OnboardingProvider({ children }: { children: React.ReactNode }) 
     clearData,
     saveToStorage,
     loadFromStorage,
+    saveProfileToLocalStorage,
   };
 
   return (

@@ -5,6 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { hapticFeedback } from '../../utils/haptics';
 import * as Notifications from 'expo-notifications';
+import { notificationService } from '../../services/notificationService';
 // IMPORTANT: No store review imports to prevent crashes
 
 export default function OnboardingScreen20() {
@@ -77,6 +78,20 @@ export default function OnboardingScreen20() {
         console.log('🔔 Permissions already granted');
       }
       
+      // Schedule notifications if permission was granted
+      const finalPermissions = await Notifications.getPermissionsAsync();
+      if (finalPermissions.status === 'granted') {
+        console.log('📅 Scheduling notifications...');
+        
+        // Schedule the daily 10 AM reminder
+        await notificationService.scheduleDailyReminder();
+        
+        // Schedule today's 7 PM protein left notification
+        await notificationService.scheduleProteinLeftNotification();
+        
+        console.log('✅ Notifications scheduled successfully');
+      }
+      
     } catch (error) {
       console.log('🚨 Notification permission error (non-blocking):', error);
       // Gracefully continue - don't let permission errors break the flow
@@ -117,57 +132,61 @@ export default function OnboardingScreen20() {
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.title}>Hit your protein goal with notifications</Text>
-        <Text style={styles.subtitle}>
-          Get reminders to stay on track with your daily protein intake.
-        </Text>
-
-        <View style={styles.mockPhoneContainer}>
-          <View style={styles.notificationCard}>
-            <Text style={styles.notificationTitle}>
-              "Protein AI" Would Like to Send You Notifications
-            </Text>
-            <Text style={styles.notificationSubtext}>
-              Notifications may include alerts, sounds, and icon badges. These can be configured in Settings.
-            </Text>
-            
-            <View style={styles.divider} />
-            
-            <View style={styles.notificationButtons}>
-              <TouchableOpacity 
-                style={styles.dontAllowButton}
-                onPress={handleDontAllow}
-              >
-                <Text style={styles.dontAllowText}>Don't Allow</Text>
-              </TouchableOpacity>
-              
-              <View style={styles.verticalDivider} />
-              
-              <TouchableOpacity 
-                style={styles.allowButton}
-                onPress={handleAllow}
-              >
-                <Text style={styles.allowText}>Allow</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          
-          {/* Bouncing finger under Allow button */}
-          <Animated.View style={[styles.fingerContainer, { transform: [{ translateY: bounceAnim }] }]}>
-            <Text style={styles.fingerEmoji}>👆</Text>
-          </Animated.View>
-        </View>
-
-        <View style={styles.statisticCard}>
-          <View style={styles.bellIcon}>
-            <Ionicons name="notifications" size={20} color="#6B6B6B" />
-          </View>
-          <Text style={styles.statisticText}>
-            78% of successful protein goal achievers used notifications to maintain their progress
+        <View style={styles.topSection}>
+          <Text style={styles.title}>Hit your protein goal with notifications</Text>
+          <Text style={styles.subtitle}>
+            Get reminders to stay on track with your daily protein intake.
           </Text>
         </View>
 
+        <View style={styles.middleSection}>
+          <View style={styles.mockPhoneContainer}>
+            <View style={styles.notificationCard}>
+              <Text style={styles.notificationTitle}>
+                "Protein AI" Would Like to Send You Notifications
+              </Text>
+              <Text style={styles.notificationSubtext}>
+                Notifications may include alerts, sounds, and icon badges. These can be configured in Settings.
+              </Text>
+              
+              <View style={styles.divider} />
+              
+              <View style={styles.notificationButtons}>
+                <TouchableOpacity 
+                  style={styles.dontAllowButton}
+                  onPress={handleDontAllow}
+                >
+                  <Text style={styles.dontAllowText}>Don't Allow</Text>
+                </TouchableOpacity>
+                
+                <View style={styles.verticalDivider} />
+                
+                <TouchableOpacity 
+                  style={styles.allowButton}
+                  onPress={handleAllow}
+                >
+                  <Text style={styles.allowText}>Allow</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+            
+            {/* Bouncing finger under Allow button */}
+            <Animated.View style={[styles.fingerContainer, { transform: [{ translateY: bounceAnim }] }]}>
+              <Text style={styles.fingerEmoji}>👆</Text>
+            </Animated.View>
+          </View>
+        </View>
 
+        <View style={styles.bottomSection}>
+          <View style={styles.statisticCard}>
+            <View style={styles.bellIcon}>
+              <Ionicons name="notifications" size={18} color="#6B6B6B" />
+            </View>
+            <Text style={styles.statisticText}>
+              78% of successful protein goal achievers used notifications to maintain their progress
+            </Text>
+          </View>
+        </View>
       </View>
 
       {/* Next Button */}
@@ -218,6 +237,18 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    justifyContent: 'space-between',
+  },
+  topSection: {
+    marginBottom: 20,
+  },
+  middleSection: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingTop: 40,
+  },
+  bottomSection: {
+    marginBottom: 20,
   },
   title: {
     fontSize: 32,
@@ -234,37 +265,28 @@ const styles = StyleSheet.create({
   },
   mockPhoneContainer: {
     alignItems: 'center',
-    marginBottom: 40,
-    marginTop: 40,
-    height: 300,
-    position: 'relative',
     justifyContent: 'center',
+    position: 'relative',
   },
   notificationCard: {
     backgroundColor: '#F2F2F7',
     borderRadius: 14,
-    width: 270,
-    alignSelf: 'center',
+    width: 300,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 8,
-    position: 'absolute',
-    top: '35%',
-    left: '50%',
-    marginLeft: -135,
-    marginTop: -80,
   },
   notificationTitle: {
     fontSize: 17,
     fontWeight: '600',
     color: '#000000',
     textAlign: 'center',
-    marginTop: 20,
-    marginBottom: 8,
-    paddingHorizontal: 16,
+    marginTop: 24,
+    marginBottom: 12,
+    paddingHorizontal: 20,
     lineHeight: 22,
   },
   notificationSubtext: {
@@ -272,12 +294,12 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     textAlign: 'center',
     lineHeight: 18,
-    marginBottom: 20,
-    paddingHorizontal: 16,
+    marginBottom: 24,
+    paddingHorizontal: 20,
   },
   notificationButtons: {
     flexDirection: 'row',
-    height: 44,
+    height: 50,
   },
   divider: {
     height: 0.5,
@@ -293,7 +315,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    height: 44,
+    height: 50,
   },
   dontAllowText: {
     fontSize: 17,
@@ -305,7 +327,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    height: 44,
+    height: 50,
   },
   allowText: {
     fontSize: 17,
@@ -314,38 +336,36 @@ const styles = StyleSheet.create({
   },
   fingerContainer: {
     position: 'absolute',
-    top: '44%',
-    left: '65%',
-    marginLeft: -16,
+    bottom: -40,
+    right: 75,
+    alignItems: 'center',
   },
   fingerEmoji: {
     fontSize: 32,
   },
   statisticCard: {
     backgroundColor: '#E8E8FF',
-    borderRadius: 16,
-    padding: 20,
+    borderRadius: 12,
+    padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 15,
-    marginTop: -20,
-    marginBottom: 380,
-    marginHorizontal: 20,
+    gap: 12,
+    marginHorizontal: 0,
   },
   bellIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
   statisticText: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     color: '#1A1A1A',
     fontWeight: '500',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   nextButton: {
     backgroundColor: '#2D2D2D',

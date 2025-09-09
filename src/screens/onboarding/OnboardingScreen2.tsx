@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { useOnboarding } from '../../context/OnboardingContext';
+import { hapticFeedback } from '../../utils/haptics';
 
 export default function OnboardingScreen2() {
   const navigation = useNavigation();
@@ -17,12 +19,14 @@ export default function OnboardingScreen2() {
 
   const handleNext = () => {
     if (selectedSex) {
+      hapticFeedback.medium();
       setSex(selectedSex);
       navigation.navigate('Age' as never);
     }
   };
 
   const handleBack = () => {
+    hapticFeedback.light();
     navigation.goBack();
   };
 
@@ -30,19 +34,23 @@ export default function OnboardingScreen2() {
     <SafeAreaView style={styles.container}>
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backArrow}>←</Text>
-        </TouchableOpacity>
+        <View style={styles.progressHeader}>
+          <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <Ionicons name="chevron-back" size={24} color="#1A1A1A" />
+          </TouchableOpacity>
+          <View style={styles.backButton} />
+          <View style={styles.backButton} />
+        </View>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '62%' }]} />
+          <View style={[styles.progressFill, { width: '10%' }]} />
         </View>
       </View>
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.title}>What's your gender?</Text>
+        <Text style={styles.title}>Choose your gender</Text>
         <Text style={styles.subtitle}>
-          (for protein calculation accuracy)
+          For protein calculation accuracy
         </Text>
 
         <View style={styles.optionsContainer}>
@@ -53,7 +61,10 @@ export default function OnboardingScreen2() {
                 styles.optionCard,
                 selectedSex === sex && styles.optionCardSelected,
               ]}
-              onPress={() => setSelectedSex(sex)}
+              onPress={() => {
+                hapticFeedback.selection();
+                setSelectedSex(sex);
+              }}
             >
               <Text
                 style={[
@@ -86,39 +97,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#FAFAFA',
   },
   progressContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 20,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  progressText: {
+    fontSize: 14,
+    color: '#6B6B6B',
+    textAlign: 'center',
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  backArrow: {
-    fontSize: 24,
-    color: '#1A1A1A',
   },
   progressBar: {
-    flex: 1,
     height: 4,
     backgroundColor: '#E5E5E5',
     borderRadius: 2,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#000000',
     borderRadius: 2,
   },
   content: {
@@ -142,7 +151,7 @@ const styles = StyleSheet.create({
   },
   optionCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 29,
     padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -153,22 +162,22 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   optionCardSelected: {
-    borderColor: '#007AFF',
-    backgroundColor: '#F0F8FF',
+    borderColor: '#000000',
+    backgroundColor: '#000000',
   },
   optionText: {
     fontSize: 18,
     fontWeight: '600',
     color: '#1A1A1A',
-    textAlign: 'center',
+    textAlign: 'left',
   },
   optionTextSelected: {
-    color: '#007AFF',
+    color: '#FFFFFF',
   },
   nextButton: {
     backgroundColor: '#2D2D2D',
-    borderRadius: 12,
-    height: 50,
+    borderRadius: 29,
+    height: 58,
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: 20,

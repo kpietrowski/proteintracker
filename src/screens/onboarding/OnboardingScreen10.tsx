@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1A1A1A',
     flex: 1,
-    paddingLeft: 20,
+    textAlign: 'left',
   },
   optionTextSelected: {
     color: '#FFFFFF',

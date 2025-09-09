@@ -13,13 +13,15 @@ import {
   Alert,
   Modal,
 } from 'react-native';
-import Svg, { Circle } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Stop, G, Path } from 'react-native-svg';
+const AnimatedSvgCircle = Animated.createAnimatedComponent(Circle);
+const AnimatedSvgGroup = Animated.createAnimatedComponent(G);
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../constants/colors';
 import { DailySummary, WeeklyProgress, DayProgress } from '../types';
-import { supabase, getDailySummary, getUserProfile } from '../services/supabase';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { localStorageService } from '../services/localStorage';
 import { hapticFeedback } from '../utils/haptics';
 
 const { width } = Dimensions.get('window');
@@ -174,15 +176,12 @@ export default function HomeScreen() {
 
   const calculateCurrentStreak = async (): Promise<number> => {
     try {
-      // Get user's protein goal
+      // Get user's protein goal from local storage
       let userGoal = 140;
       try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (authUser) {
-          const profile = await getUserProfile(authUser.id);
-          if (profile && profile.dailyProteinGoal) {
-            userGoal = profile.dailyProteinGoal;
-          }
+        const profile = await localStorageService.getUserProfile();
+        if (profile && profile.proteinGoal) {
+          userGoal = profile.proteinGoal;
         }
       } catch (profileError) {
         console.log('Using default goal for streak calculation');
@@ -196,12 +195,10 @@ export default function HomeScreen() {
         const checkDate = new Date(today);
         checkDate.setDate(today.getDate() - i);
         const dateKey = checkDate.toISOString().split('T')[0];
-        const storageKey = `demo_protein_${dateKey}`;
         
         try {
-          const dayData = await AsyncStorage.getItem(storageKey);
-          if (dayData) {
-            const entries = JSON.parse(dayData);
+          const entries = await localStorageService.getProteinLogsForDate(dateKey);
+          if (entries.length > 0) {
             const totalProtein = entries.reduce((sum: number, entry: any) => sum + entry.amount, 0);
             
             if (totalProtein >= userGoal) {
@@ -232,85 +229,214 @@ export default function HomeScreen() {
 
   const loadData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const summary = await getDailySummary(user.id, new Date());
-        setDailySummary(summary);
-        
-        // Load weekly progress
-        const weekData = await loadWeeklyProgress(user.id);
-        setWeeklyProgress(weekData);
-        
-        // Load streak data
-        const streak = await calculateCurrentStreak();
-        setCurrentStreak(streak);
-      } else {
-        // Demo mode - load mock data
-        console.log('Demo mode - loading mock data');
-        const mockSummary = await loadMockDailySummary();
-        setDailySummary(mockSummary);
-        
-        const weekData = await loadWeeklyProgress('demo-user');
-        setWeeklyProgress(weekData);
-        
-        // Load streak data
-        const streak = await calculateCurrentStreak();
-        setCurrentStreak(streak);
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-      // Fallback to mock data on error
-      const mockSummary = await loadMockDailySummary();
+      // Load local user data
+      console.log('📱 Loading data from local storage...');
+      
+      // Load daily summary from local storage
+      const mockSummary = await loadLocalDailySummary();
       setDailySummary(mockSummary);
       
-      const weekData = await loadWeeklyProgress('demo-user');
+      // Load weekly progress from local storage
+      const weekData = await loadLocalWeeklyProgress();
       setWeeklyProgress(weekData);
       
-      // Load streak data
-      const streak = await calculateCurrentStreak();
+      // Load streak data using the new method from localStorage service
+      const streak = await localStorageService.calculateCurrentStreak();
       setCurrentStreak(streak);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      // Fallback to default data on error
+      setDailySummary({
+        date: new Date(),
+        totalProtein: 0,
+        goalProtein: 150,
+        entries: [],
+        percentageComplete: 0,
+        remainingProtein: 150,
+      });
+      setWeeklyProgress({
+        weekDays: [],
+        goalsHit: 0,
+        totalProtein: 0,
+        averageProtein: 0,
+      });
+      setCurrentStreak(0);
     } finally {
       // Small delay to ensure animations are set up
       setTimeout(() => setLoading(false), 100);
     }
   };
 
-  const loadMockDailySummary = async (): Promise<DailySummary> => {
-    // Get stored protein entries from AsyncStorage for demo mode
-    const dateKey = new Date().toISOString().split('T')[0];
-    const storageKey = `demo_protein_${dateKey}`;
-    
+  const loadLocalDailySummary = async (): Promise<DailySummary> => {
     try {
-      // Get user's actual protein goal from their profile
-      let userGoal = 140; // Default fallback
-      try {
-        const { data: { user: authUser } } = await supabase.auth.getUser();
-        if (authUser) {
-          const profile = await getUserProfile(authUser.id);
-          if (profile && profile.dailyProteinGoal) {
-            userGoal = profile.dailyProteinGoal;
-          }
-        }
-      } catch (profileError) {
-        console.log('Could not load user profile, using default goal');
+      // Get user profile for protein goal
+      const profile = await localStorageService.getUserProfile();
+      const userGoal = profile?.proteinGoal || 150;
+      
+      // Get today's protein entries
+      const dateKey = new Date().toISOString().split('T')[0];
+      const todayEntries = await localStorageService.getProteinLogsForDate(dateKey);
+      
+      // Calculate total protein from entries
+      const totalProtein = todayEntries.reduce((sum, entry) => sum + entry.amount, 0);
+      
+      // Create entries in the expected format
+      const formattedEntries = todayEntries.map(entry => ({
+        id: entry.id,
+        userId: 'local',
+        date: new Date(entry.date),
+        amount: entry.amount,
+        description: entry.description,
+        source: entry.source,
+        createdAt: new Date(entry.createdAt),
+      }));
+      
+      const percentageComplete = Math.min(Math.round((totalProtein / userGoal) * 100), 100);
+      const remainingProtein = Math.max(userGoal - totalProtein, 0);
+      
+      return {
+        date: new Date(),
+        totalProtein,
+        goalProtein: userGoal,
+        entries: formattedEntries,
+        percentageComplete,
+        remainingProtein,
+      };
+    } catch (error) {
+      console.error('Error loading local daily summary:', error);
+      return {
+        date: new Date(),
+        totalProtein: 0,
+        goalProtein: 150,
+        entries: [],
+        percentageComplete: 0,
+        remainingProtein: 150,
+      };
+    }
+  };
+
+  const loadLocalWeeklyProgress = async (): Promise<WeeklyProgress> => {
+    try {
+      // Get user profile for protein goal
+      const profile = await localStorageService.getUserProfile();
+      const userGoal = profile?.proteinGoal || 150;
+      
+      // Get current week dates
+      const today = new Date();
+      const startOfWeek = new Date(today);
+      const dayOfWeek = today.getDay();
+      startOfWeek.setDate(today.getDate() - dayOfWeek);
+      
+      const weekDays: DayProgress[] = [];
+      let totalWeeklyProtein = 0;
+      let goalsHit = 0;
+      
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + i);
+        const dateKey = date.toISOString().split('T')[0];
+        
+        // Get entries for this day
+        const dayEntries = await localStorageService.getProteinLogsForDate(dateKey);
+        const dayProtein = dayEntries.reduce((sum, entry) => sum + entry.amount, 0);
+        
+        const goalMet = dayProtein >= userGoal;
+        if (goalMet) goalsHit++;
+        totalWeeklyProtein += dayProtein;
+        
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+        
+        weekDays.push({
+          date,
+          dayName: dayNames[i],
+          proteinAmount: dayProtein,
+          goalAmount: userGoal,
+          goalMet,
+          isToday: dateKey === today.toISOString().split('T')[0],
+          isFuture: date > today,
+        });
       }
       
-      const existingData = await AsyncStorage.getItem(storageKey);
-      const todayEntries = existingData ? JSON.parse(existingData) : [];
+      const averageProtein = Math.round(totalWeeklyProtein / 7);
+      
+      return {
+        weekDays,
+        goalsHit,
+        totalProtein: totalWeeklyProtein,
+        averageProtein,
+      };
+    } catch (error) {
+      console.error('Error loading local weekly progress:', error);
+      return {
+        weekDays: [],
+        goalsHit: 0,
+        totalProtein: 0,
+        averageProtein: 0,
+      };
+    }
+  };
+
+  const calculateLocalStreak = async (): Promise<number> => {
+    try {
+      // Get user profile for protein goal
+      const profile = await localStorageService.getUserProfile();
+      const userGoal = profile?.proteinGoal || 150;
+      
+      // Check previous days starting from today
+      let streak = 0;
+      const today = new Date();
+      
+      for (let i = 0; i < 30; i++) { // Check up to 30 days back
+        const checkDate = new Date(today);
+        checkDate.setDate(today.getDate() - i);
+        const dateKey = checkDate.toISOString().split('T')[0];
+        
+        const dayEntries = await localStorageService.getProteinLogsForDate(dateKey);
+        const totalProtein = dayEntries.reduce((sum, entry) => sum + entry.amount, 0);
+        
+        if (totalProtein >= userGoal) {
+          streak++;
+        } else {
+          break; // Streak is broken
+        }
+      }
+      
+      return streak;
+    } catch (error) {
+      console.error('Error calculating local streak:', error);
+      return 0;
+    }
+  };
+
+  const loadMockDailySummary = async (): Promise<DailySummary> => {
+    // Get stored protein entries from localStorage service
+    const dateKey = new Date().toISOString().split('T')[0];
+    
+    try {
+      // Get user's actual protein goal - check AsyncStorage first for immediate updates
+      let userGoal = 140; // Default fallback
+      
+      try {
+        // Use localStorage service as single source of truth
+        const profile = await localStorageService.getUserProfile();
+        if (profile && profile.proteinGoal) {
+          userGoal = profile.proteinGoal;
+          console.log('Using protein goal from localStorage service:', userGoal);
+        } else {
+          console.log('No profile found, using default goal:', userGoal);
+        }
+      } catch (profileError) {
+        console.log('Could not load user profile, using default goal:', profileError);
+      }
+      
+      // Load protein entries from localStorage service (single source of truth)
+      const todayEntries = await localStorageService.getProteinLogsForDate(dateKey);
       
       // Calculate total protein from stored entries
       const totalProtein = todayEntries.reduce((sum: number, entry: any) => sum + entry.amount, 0);
       
-      // Convert stored entries to the format expected by the app
-      const entries = todayEntries.map((entry: any, index: number) => ({
-        id: `demo-${index}`,
-        userId: 'demo-user',
-        date: new Date(entry.timestamp),
-        amount: entry.amount,
-        description: entry.description,
-        source: entry.source || 'voice',
-        createdAt: new Date(entry.timestamp),
-      }));
+      // Entries are already in the correct format from localStorage service
+      const entries = todayEntries;
       
       return {
         date: new Date(),
@@ -335,15 +461,12 @@ export default function HomeScreen() {
   };
 
   const loadWeeklyProgress = async (userId: string): Promise<WeeklyProgress> => {
-    // Get user's actual protein goal
+    // Get user's actual protein goal from local storage
     let userGoal = 140;
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (authUser) {
-        const profile = await getUserProfile(authUser.id);
-        if (profile && profile.dailyProteinGoal) {
-          userGoal = profile.dailyProteinGoal;
-        }
+      const profile = await localStorageService.getUserProfile();
+      if (profile && profile.proteinGoal) {
+        userGoal = profile.proteinGoal;
       }
     } catch (profileError) {
       console.log('Using default goal for weekly progress');
@@ -381,17 +504,15 @@ export default function HomeScreen() {
           isFuture: true,
         };
       } else {
-        // Past days - check actual data from AsyncStorage
+        // Past days - check actual data from localStorage service
         const pastDate = new Date();
         const daysDiff = today - index;
         pastDate.setDate(pastDate.getDate() - daysDiff);
         const dateKey = pastDate.toISOString().split('T')[0];
-        const storageKey = `demo_protein_${dateKey}`;
         
         try {
-          const dayData = await AsyncStorage.getItem(storageKey);
-          if (dayData) {
-            const entries = JSON.parse(dayData);
+          const entries = await localStorageService.getProteinLogsForDate(dateKey);
+          if (entries.length > 0) {
             const totalProtein = entries.reduce((sum: number, entry: any) => sum + entry.amount, 0);
             
             return {
@@ -446,29 +567,16 @@ export default function HomeScreen() {
 
   const handleDeleteEntry = async (entryIndex: number) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        // For real users, we would delete from database
-        // For now, this will handle demo mode only
-        console.log('Would delete entry for real user:', entryIndex);
-      } else {
-        // Demo mode - remove from AsyncStorage
-        const dateKey = new Date().toISOString().split('T')[0];
-        const storageKey = `demo_protein_${dateKey}`;
+      // Get current entries from local storage
+      const dateKey = new Date().toISOString().split('T')[0];
+      const entries = await localStorageService.getProteinLogsForDate(dateKey);
+      
+      if (entries[entryIndex]) {
+        // Delete the entry using the local storage service
+        await localStorageService.deleteProteinEntry(entries[entryIndex].id, dateKey);
         
-        const existingData = await AsyncStorage.getItem(storageKey);
-        if (existingData) {
-          const todayEntries = JSON.parse(existingData);
-          
-          // Remove the entry at the specified index
-          todayEntries.splice(entryIndex, 1);
-          
-          // Save back to storage
-          await AsyncStorage.setItem(storageKey, JSON.stringify(todayEntries));
-          
-          // Reload data to update the UI
-          await loadData();
-        }
+        // Reload data to update the UI
+        await loadData();
       }
     } catch (error) {
       console.error('Error deleting entry:', error);
@@ -555,6 +663,9 @@ export default function HomeScreen() {
   };
 
   const triggerGoalCompleteCelebration = () => {
+    // EPIC HAPTIC CELEBRATION! 🎉
+    hapticFeedback.epicCelebration();
+    
     // Show sophisticated success notification first
     setShowSuccessNotification(true);
     
@@ -644,11 +755,17 @@ export default function HomeScreen() {
   return (
     <View style={styles.screenWrapper}>
       <SafeAreaView style={styles.container}>
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 100 }}
+        >
         {/* Date Header */}
         <View style={styles.header}>
           <Text style={styles.dateText}>{formatDate(new Date())}</Text>
-          
+          <View style={styles.streakContainer}>
+            <Ionicons name="flame" size={20} color="#FF6B35" />
+            <Text style={styles.streakText}>{currentStreak}</Text>
+          </View>
         </View>
 
         {/* Weekly Progress Rings */}
@@ -725,6 +842,7 @@ export default function HomeScreen() {
               size={width * 0.82}
               strokeWidth={26}
               animated={true}
+              isGoalMet={isGoalMet}
             />
             <View style={styles.ringContent}>
               {isGoalMet ? (
@@ -863,21 +981,22 @@ export default function HomeScreen() {
   );
 }
 
-// Progress Ring Component
-function ProgressRing({ percentage, color, size, strokeWidth, animated = false }: {
+// Progress Ring Component with Luxury Effects
+function ProgressRing({ percentage, color, size, strokeWidth, animated = false, isGoalMet = false }: {
   percentage: number | Animated.Value;
   color: string;
   size: number;
   strokeWidth: number;
   animated?: boolean;
+  isGoalMet?: boolean;
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   
+  // Track current percentage for rendering
+  const [currentPercentage, setCurrentPercentage] = useState(0);
+  
   if (animated && percentage instanceof Animated.Value) {
-    // Create animated wrapper view that will update the percentage
-    const [currentPercentage, setCurrentPercentage] = useState(0);
-    
     React.useEffect(() => {
       const listener = percentage.addListener(({ value }) => {
         setCurrentPercentage(value);
@@ -889,28 +1008,56 @@ function ProgressRing({ percentage, color, size, strokeWidth, animated = false }
     const strokeDashoffset = circumference - (currentPercentage / 100) * circumference;
     
     return (
-      <Svg width={size} height={size}>
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={colors.status.neutral}
-          strokeWidth={strokeWidth}
-          fill="none"
-        />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          fill="none"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
-      </Svg>
+      <View>
+        <Svg width={size} height={size}>
+          <Defs>
+            {/* Luxury gradient for goal completion */}
+            <SvgLinearGradient id="luxuryGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <Stop offset="0%" stopColor="#00b894" stopOpacity="0.6" />
+              <Stop offset="25%" stopColor="#55efc4" stopOpacity="1.0" />
+              <Stop offset="50%" stopColor="#ffffff" stopOpacity="0.9" />
+              <Stop offset="75%" stopColor="#55efc4" stopOpacity="1.0" />
+              <Stop offset="100%" stopColor="#00b894" stopOpacity="0.6" />
+            </SvgLinearGradient>
+            
+            {/* Moving reflection gradient - simulates light bouncing off polished metal */}
+            <SvgLinearGradient id="movingReflection" x1="0%" y1="0%" x2="100%" y2="0%">
+              <Stop offset="0%" stopColor="#00b894" stopOpacity="0.0" />
+              <Stop offset="20%" stopColor="#55efc4" stopOpacity="0.3" />
+              <Stop offset="40%" stopColor="#ffffff" stopOpacity="0.8" />
+              <Stop offset="60%" stopColor="#ffffff" stopOpacity="0.9" />
+              <Stop offset="80%" stopColor="#55efc4" stopOpacity="0.3" />
+              <Stop offset="100%" stopColor="#00b894" stopOpacity="0.0" />
+            </SvgLinearGradient>
+          </Defs>
+          
+          {/* Background ring */}
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={colors.status.neutral}
+            strokeWidth={strokeWidth}
+            fill="none"
+          />
+          
+          {/* Main progress ring */}
+          <Circle
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            stroke={isGoalMet ? "url(#luxuryGradient)" : color}
+            strokeWidth={strokeWidth}
+            fill="none"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
+          />
+          
+        </Svg>
+        
+      </View>
     );
   } else {
     const percentageValue = typeof percentage === 'number' ? percentage : 0;
@@ -918,6 +1065,16 @@ function ProgressRing({ percentage, color, size, strokeWidth, animated = false }
     
     return (
       <Svg width={size} height={size}>
+        <Defs>
+          <SvgLinearGradient id="luxuryGradientStatic" x1="0%" y1="0%" x2="100%" y2="0%">
+            <Stop offset="0%" stopColor="#00b894" stopOpacity="0.6" />
+            <Stop offset="25%" stopColor="#55efc4" stopOpacity="1.0" />
+            <Stop offset="50%" stopColor="#ffffff" stopOpacity="0.9" />
+            <Stop offset="75%" stopColor="#55efc4" stopOpacity="1.0" />
+            <Stop offset="100%" stopColor="#00b894" stopOpacity="0.6" />
+          </SvgLinearGradient>
+        </Defs>
+        
         <Circle
           cx={size / 2}
           cy={size / 2}
@@ -930,7 +1087,7 @@ function ProgressRing({ percentage, color, size, strokeWidth, animated = false }
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={color}
+          stroke={isGoalMet ? "url(#luxuryGradientStatic)" : color}
           strokeWidth={strokeWidth}
           fill="none"
           strokeDasharray={circumference}
@@ -953,8 +1110,8 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
+    paddingTop: 10,
+    paddingBottom: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -968,14 +1125,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.background.white,
-    paddingHorizontal: 2,
-    paddingVertical: 1,
-    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 1,
-    elevation: 1,
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
+    gap: 4,
   },
   streakContainerMinimal: {
     flexDirection: 'row',
@@ -992,10 +1150,16 @@ const styles = StyleSheet.create({
     minWidth: 18,
     textAlign: 'center',
   },
+  streakText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.primary,
+    marginLeft: 2,
+  },
   weeklySection: {
     paddingHorizontal: 20,
     paddingTop: 0,
-    paddingBottom: 10,
+    paddingBottom: 5,
   },
   sectionTitle: {
     fontSize: 16,
@@ -1084,14 +1248,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   goalMetTitle: {
-    fontSize: 28,
+    fontSize: 36,
     fontWeight: '700',
-    color: colors.primary.teal,
+    color: '#000000',
     textAlign: 'center',
-    marginBottom: 6,
-    letterSpacing: -0.3,
-    lineHeight: 32,
-    paddingHorizontal: 20,
+    marginBottom: 2,
+    letterSpacing: -0.5,
+    lineHeight: 34,
+    paddingHorizontal: 10,
   },
   goalMetStats: {
     fontSize: 18,

@@ -9,10 +9,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { colors } from '../constants/colors';
 import { MonthlyCalendarData, CalendarDay, MonthlyStats } from '../types';
-import { supabase, getMonthlyData, getUserProfile } from '../services/supabase';
+import { localStorageService } from '../services/localStorage';
 
 export default function CalendarScreen() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -32,19 +31,16 @@ export default function CalendarScreen() {
 
   const loadMonthData = async () => {
     try {
-      // Load user's protein goal first
-      const { data: { user } } = await supabase.auth.getUser();
+      // Load user's protein goal from local storage
       let goalAmount = 120; // default
       
-      if (user) {
-        const profile = await getUserProfile(user.id);
-        if (profile) {
-          goalAmount = profile.dailyProteinGoal;
-          setUserGoal(goalAmount);
-        }
+      const profile = await localStorageService.getUserProfile();
+      if (profile) {
+        goalAmount = profile.proteinGoal;
+        setUserGoal(goalAmount);
       }
 
-      // Load actual protein data from AsyncStorage for each day of the month
+      // Load actual protein data from localStorage service for each day of the month
       const monthData = [];
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth();
@@ -53,12 +49,10 @@ export default function CalendarScreen() {
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
         const dateKey = date.toISOString().split('T')[0];
-        const proteinDataKey = `demo_protein_${dateKey}`;
         
         try {
-          const proteinData = await AsyncStorage.getItem(proteinDataKey);
-          if (proteinData) {
-            const entries = JSON.parse(proteinData);
+          const entries = await localStorageService.getProteinLogsForDate(dateKey);
+          if (entries.length > 0) {
             const totalProtein = entries.reduce((sum: number, entry: any) => sum + (entry.amount || 0), 0);
             
             monthData.push({
@@ -100,15 +94,24 @@ export default function CalendarScreen() {
       const currentDate = new Date(startDate);
       currentDate.setDate(startDate.getDate() + i);
       
-      const dayData = data.find(d => {
-        const dataDate = new Date(d.date);
-        return dataDate.getDate() === currentDate.getDate() && 
-               dataDate.getMonth() === currentDate.getMonth() &&
-               dataDate.getFullYear() === currentDate.getFullYear();
-      });
+      const currentDateKey = currentDate.toISOString().split('T')[0];
+      const dayData = data.find(d => d.date === currentDateKey);
 
       const isCurrentMonth = currentDate.getMonth() === month;
-      const isToday = currentDate.toDateString() === new Date().toDateString();
+      const today = new Date();
+      const isToday = currentDate.toDateString() === today.toDateString();
+      
+      // Debug logging for today's date
+      if (currentDate.getDate() === today.getDate() && isCurrentMonth) {
+        console.log('Calendar debug:', {
+          currentDate: currentDate.toDateString(),
+          today: today.toDateString(),
+          currentDateKey,
+          isToday,
+          hasData: !!dayData,
+          dataDate: dayData?.date
+        });
+      }
       
       let status: CalendarDay['status'] = 'no_data';
       let proteinAmount: number | undefined;

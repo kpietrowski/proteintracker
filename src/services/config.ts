@@ -1,5 +1,10 @@
 import Constants from 'expo-constants';
 
+/**
+ * ⚠️ SECURITY WARNING: NEVER HARDCODE API KEYS IN THIS FILE
+ * See /SECURITY_GUIDELINES.md for proper API key management
+ * All API keys must come from environment variables only
+ */
 interface Config {
   openAI: {
     apiKey: string;
@@ -19,25 +24,57 @@ interface Config {
 }
 
 const getConfig = (): Config => {
-  const extra = Constants.expoConfig?.extra || {};
-  
-  return {
-    openAI: {
-      apiKey: extra.OPENAI_API_KEY || process.env.OPENAI_API_KEY || '',
-    },
-    supabase: {
-      url: extra.SUPABASE_URL || process.env.SUPABASE_URL || '',
-      anonKey: extra.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '',
-    },
-    revenueCat: {
-      apiKeyIOS: extra.REVENUECAT_API_KEY_IOS || process.env.REVENUECAT_API_KEY_IOS || '',
-      apiKeyAndroid: extra.REVENUECAT_API_KEY_ANDROID || process.env.REVENUECAT_API_KEY_ANDROID || '',
-    },
-    superwall: {
-      apiKey: extra.SUPERWALL_API_KEY || process.env.SUPERWALL_API_KEY || '',
-    },
-    environment: (extra.APP_ENV || process.env.APP_ENV || 'development') as Config['environment'],
-  };
+  try {
+    // Get extra from expo config - this is where app.config.js puts env vars
+    const extra = Constants.expoConfig?.extra || Constants.manifest?.extra || {};
+    
+    // Simple direct access - app.config.js already loaded from .env
+    const getEnvVar = (key: string, defaultValue: string = '') => {
+      const value = extra[key] || defaultValue;
+      
+      // Debug logging for API keys
+      if (key === 'SUPERWALL_API_KEY' && value) {
+        console.log(`✅ Superwall API key loaded: ${value.substring(0, 10)}...`);
+      }
+      if (key === 'OPENAI_API_KEY') {
+        if (value) {
+          console.log(`✅ OpenAI API key loaded: ${value.substring(0, 10)}...`);
+        } else {
+          console.log(`❌ OpenAI API key NOT loaded - voice features will not work`);
+        }
+      }
+      
+      return value;
+    };
+    
+    return {
+      openAI: {
+        apiKey: getEnvVar('OPENAI_API_KEY'),
+      },
+      supabase: {
+        url: getEnvVar('SUPABASE_URL'),
+        anonKey: getEnvVar('SUPABASE_ANON_KEY'),
+      },
+      revenueCat: {
+        apiKeyIOS: getEnvVar('REVENUECAT_API_KEY_IOS'),
+        apiKeyAndroid: getEnvVar('REVENUECAT_API_KEY_ANDROID'),
+      },
+      superwall: {
+        apiKey: getEnvVar('SUPERWALL_API_KEY'),
+      },
+      environment: (getEnvVar('APP_ENV', 'development')) as Config['environment'],
+    };
+  } catch (error) {
+    console.error('Config initialization error:', error);
+    // Return safe defaults if config loading fails
+    return {
+      openAI: { apiKey: '' },
+      supabase: { url: '', anonKey: '' },
+      revenueCat: { apiKeyIOS: '', apiKeyAndroid: '' },
+      superwall: { apiKey: '' },
+      environment: 'development',
+    };
+  }
 };
 
 export const config = getConfig();

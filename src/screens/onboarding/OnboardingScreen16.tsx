@@ -6,36 +6,32 @@ import { useOnboarding } from '../../context/OnboardingContext';
 import { Ionicons } from '@expo/vector-icons';
 import { hapticFeedback } from '../../utils/haptics';
 
-export default function OnboardingScreen1() {
+export default function OnboardingScreen16() {
   const navigation = useNavigation();
-  const { state, setFitnessGoal } = useOnboarding();
-  const [selectedGoal, setSelectedGoal] = useState<string>(state.data.fitnessGoal || '');
+  const { state } = useOnboarding();
+  const [selectedOption, setSelectedOption] = useState<string>('');
 
-  const goals = [
+  const options = [
     {
-      id: 'lose-weight',
-      text: 'Hit Protein Goal - Lose weight',
+      id: 'no',
+      text: 'No',
+      icon: 'thumbs-down',
     },
     {
-      id: 'maintain',
-      text: 'Hit Protein Goal - Maintain',
-    },
-    {
-      id: 'gain-weight',
-      text: 'Hit Protein Goal - Gain weight',
+      id: 'yes',
+      text: 'Yes',
+      icon: 'thumbs-up',
     },
   ];
 
   useEffect(() => {
-    setSelectedGoal(state.data.fitnessGoal || '');
-  }, [state.data.fitnessGoal]);
+    // Initialize if needed
+  }, [state?.data]);
 
   const handleNext = () => {
-    if (selectedGoal) {
-      hapticFeedback.medium();
-      setFitnessGoal(selectedGoal);
-      navigation.navigate('ExerciseType' as never);
-    }
+    hapticFeedback.medium();
+    // Store selection locally if needed
+    navigation.navigate('ReadyForGoal' as never);
   };
 
   const handleBack = () => {
@@ -43,6 +39,15 @@ export default function OnboardingScreen1() {
     navigation.goBack();
   };
 
+  const renderIcon = (option: any) => {
+    return (
+      <Ionicons 
+        name={option.icon} 
+        size={24} 
+        color={selectedOption === option.text ? '#FFFFFF' : '#6B6B6B'} 
+      />
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -56,38 +61,40 @@ export default function OnboardingScreen1() {
           <View style={styles.backButton} />
         </View>
         <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: '30%' }]} />
+          <View style={[styles.progressFill, { width: '60%' }]} />
         </View>
       </View>
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.title}>What's your main goal with protein tracking?</Text>
-        <Text style={styles.subtitle}>
-          This helps us create your personalized protein recommendation.
+        <Text style={styles.title}>
+          Do you feel like not hitting your protein goal has slowed your progress in the past?
         </Text>
 
         <View style={styles.optionsContainer}>
-          {goals.map((goal, index) => (
+          {options.map((option) => (
             <TouchableOpacity
-              key={goal.id}
+              key={option.id}
               style={[
                 styles.optionCard,
-                selectedGoal === goal.text && styles.optionCardSelected,
+                selectedOption === option.text && styles.optionCardSelected,
               ]}
               onPress={() => {
                 hapticFeedback.selection();
-                setSelectedGoal(goal.text);
+                setSelectedOption(option.text);
               }}
             >
-              <Text
-                style={[
-                  styles.optionText,
-                  selectedGoal === goal.text && styles.optionTextSelected,
-                ]}
-              >
-                {goal.text}
-              </Text>
+              <View style={styles.optionContent}>
+                {renderIcon(option)}
+                <Text
+                  style={[
+                    styles.optionText,
+                    selectedOption === option.text && styles.optionTextSelected,
+                  ]}
+                >
+                  {option.text}
+                </Text>
+              </View>
             </TouchableOpacity>
           ))}
         </View>
@@ -95,9 +102,9 @@ export default function OnboardingScreen1() {
 
       {/* Next Button */}
       <TouchableOpacity
-        style={[styles.nextButton, !selectedGoal && styles.nextButtonDisabled]}
+        style={[styles.nextButton, selectedOption && styles.nextButtonEnabled]}
         onPress={handleNext}
-        disabled={!selectedGoal}
+        disabled={!selectedOption}
       >
         <Text style={styles.nextButtonText}>Next</Text>
       </TouchableOpacity>
@@ -121,11 +128,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  progressText: {
-    fontSize: 14,
-    color: '#6B6B6B',
-    textAlign: 'center',
-  },
   backButton: {
     width: 40,
     height: 40,
@@ -133,6 +135,11 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  progressText: {
+    fontSize: 14,
+    color: '#6B6B6B',
+    textAlign: 'center',
   },
   progressBar: {
     height: 4,
@@ -147,31 +154,22 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 20,
+    paddingTop: 20,
   },
   title: {
     fontSize: 32,
     fontWeight: 'bold',
     color: '#1A1A1A',
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#6B6B6B',
-    marginBottom: 40,
-    lineHeight: 24,
+    marginBottom: 60,
+    lineHeight: 40,
   },
   optionsContainer: {
-    gap: 12,
+    gap: 16,
   },
   optionCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#E5E5E5',
     borderRadius: 29,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     borderWidth: 1,
     borderColor: 'transparent',
   },
@@ -179,17 +177,23 @@ const styles = StyleSheet.create({
     borderColor: '#000000',
     backgroundColor: '#000000',
   },
+  optionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
   optionText: {
     fontSize: 18,
     fontWeight: '600',
     color: '#1A1A1A',
+    flex: 1,
     textAlign: 'left',
   },
   optionTextSelected: {
     color: '#FFFFFF',
   },
   nextButton: {
-    backgroundColor: '#2D2D2D',
+    backgroundColor: '#CCCCCC',
     borderRadius: 29,
     height: 58,
     justifyContent: 'center',
@@ -197,8 +201,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 20,
     marginBottom: 20,
   },
-  nextButtonDisabled: {
-    backgroundColor: '#CCCCCC',
+  nextButtonEnabled: {
+    backgroundColor: '#2D2D2D',
   },
   nextButtonText: {
     fontSize: 18,
