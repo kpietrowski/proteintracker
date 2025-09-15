@@ -70,12 +70,24 @@ export default function VoiceInputModal() {
 
   const startRecording = async () => {
     try {
-      setIsRecording(true);
       setResult(null);
+      // Start recording first, which will handle permissions
       await whisperService.startRecording();
-    } catch (error) {
+      // Only set recording state if successful
+      setIsRecording(true);
+    } catch (error: any) {
       console.error('Failed to start recording:', error);
-      Alert.alert('Error', 'Failed to start recording. Please check microphone permissions.');
+      // Don't show error for permission-related or background audio session errors
+      // The user will tap again after granting permission
+      const isPermissionError = error.message?.includes('permission') || 
+                               error.message === 'permission_prompt_in_progress';
+      const isBackgroundError = error.message?.includes('background') || 
+                               error.message?.includes('audio session') ||
+                               error.code === 'EXModulesErrorDomain';
+      
+      if (!isPermissionError && !isBackgroundError) {
+        Alert.alert('Error', error.message || 'Failed to start recording. Please try again.');
+      }
       setIsRecording(false);
     }
   };
@@ -520,15 +532,15 @@ const styles = StyleSheet.create({
     width: 180,
   },
   proteinAmount: {
-    fontSize: 84,
+    fontSize: 92,
     fontWeight: 'bold',
     color: colors.primary.teal,
-    lineHeight: 84,
+    lineHeight: 92,
     minWidth: 160,
     textAlign: 'center',
   },
   proteinLabel: {
-    fontSize: 32,
+    fontSize: 36,
     color: colors.text.secondary,
     marginTop: -12,
     fontWeight: '500',

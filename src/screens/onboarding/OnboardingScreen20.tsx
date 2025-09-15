@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ export default function OnboardingScreen20() {
   const navigation = useNavigation();
   const bounceAnim = useRef(new Animated.Value(0)).current;
   const [permissionStatus, setPermissionStatus] = useState<string>('checking...');
+  const [hasAllowedNotifications, setHasAllowedNotifications] = useState(false);
 
   useEffect(() => {
     const bounce = () => {
@@ -47,6 +48,7 @@ export default function OnboardingScreen20() {
 
   const handleAllow = async () => {
     hapticFeedback.success();
+    setHasAllowedNotifications(true);
     
     try {
       console.log('🔔 Checking current notification permissions...');
@@ -131,7 +133,11 @@ export default function OnboardingScreen20() {
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.topSection}>
           <Text style={styles.title}>Hit your protein goal with notifications</Text>
           <Text style={styles.subtitle}>
@@ -176,25 +182,15 @@ export default function OnboardingScreen20() {
             </Animated.View>
           </View>
         </View>
-
-        <View style={styles.bottomSection}>
-          <View style={styles.statisticCard}>
-            <View style={styles.bellIcon}>
-              <Ionicons name="notifications" size={18} color="#6B6B6B" />
-            </View>
-            <Text style={styles.statisticText}>
-              78% of successful protein goal achievers used notifications to maintain their progress
-            </Text>
-          </View>
-        </View>
-      </View>
+      </ScrollView>
 
       {/* Next Button */}
       <TouchableOpacity
-        style={styles.nextButton}
-        onPress={handleAllow}
+        style={[styles.nextButton, !hasAllowedNotifications && styles.nextButtonDisabled]}
+        onPress={hasAllowedNotifications ? handleAllow : undefined}
+        disabled={!hasAllowedNotifications}
       >
-        <Text style={styles.nextButtonText}>Next</Text>
+        <Text style={[styles.nextButtonText, !hasAllowedNotifications && styles.nextButtonTextDisabled]}>Next</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );
@@ -234,9 +230,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     borderRadius: 2,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
+    paddingBottom: 20,
     justifyContent: 'space-between',
   },
   topSection: {
@@ -380,5 +380,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#FFFFFF',
+  },
+  nextButtonDisabled: {
+    backgroundColor: '#E5E5E5',
+  },
+  nextButtonTextDisabled: {
+    color: '#999999',
   },
 });

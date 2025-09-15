@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useOnboarding } from '../../context/OnboardingContext';
@@ -68,7 +68,11 @@ export default function OnboardingScreen6() {
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>What's your weight?</Text>
         <Text style={styles.subtitle}>
           Current weight helps us personalize your protein targets.
@@ -150,7 +154,7 @@ export default function OnboardingScreen6() {
             </Text>
           </View>
         </View>
-      </View>
+      </ScrollView>
 
       {/* Next Button */}
       <TouchableOpacity
@@ -202,9 +206,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     borderRadius: 2,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   title: {
     fontSize: 32,

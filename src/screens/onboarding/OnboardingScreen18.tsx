@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -99,11 +99,15 @@ export default function OnboardingScreen18() {
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>You have great potential to crush your goal</Text>
 
         <ProteinProgressChart />
-      </View>
+      </ScrollView>
 
       {/* Next Button */}
       <TouchableOpacity
@@ -155,10 +159,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     borderRadius: 2,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingBottom: 20,
   },
   title: {
     fontSize: 32,

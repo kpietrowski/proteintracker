@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -57,7 +57,11 @@ export default function OnboardingScreen14() {
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>Make gains 2X faster with Protein AI vs on your own</Text>
 
         <View style={styles.chartContainer}>
@@ -119,11 +123,11 @@ export default function OnboardingScreen14() {
               <Text style={styles.insightText}>Key Insight</Text>
             </View>
             <Text style={styles.subtitle}>
-              Protein AI makes it easy and holds you accountable to reach your goals
+              Hit your protein goal consistently and muscles grow 30-50% faster with the *same* workouts.
             </Text>
           </View>
         </View>
-      </View>
+      </ScrollView>
 
       {/* Next Button */}
       <TouchableOpacity
@@ -175,10 +179,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     borderRadius: 2,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 20,
+    paddingBottom: 20,
   },
   title: {
     fontSize: 26,

@@ -393,11 +393,6 @@ export default function ProfileScreen() {
           </TouchableOpacity>
           */}
         </View>
-
-        {/* Sign Out Button */}
-        <TouchableOpacity style={styles.signOutButton} onPress={handleClearData}>
-          <Text style={styles.signOutText}>Clear All Data</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -574,18 +569,5 @@ const styles = StyleSheet.create({
   settingArrow: {
     fontSize: 20,
     color: colors.text.secondary,
-  },
-  signOutButton: {
-    marginHorizontal: 20,
-    marginBottom: 30,
-    paddingVertical: 15,
-    borderRadius: 10,
-    backgroundColor: colors.secondary.orange,
-  },
-  signOutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text.white,
-    textAlign: 'center',
   },
 });

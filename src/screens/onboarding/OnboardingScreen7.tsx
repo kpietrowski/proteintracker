@@ -167,18 +167,18 @@ export default function OnboardingScreen7() {
           {/* Grid lines */}
           <Line x1="0" y1="120" x2={width - 80} y2="120" stroke="#F0F0F0" strokeWidth="1" />
           
-          {/* Progress curve - with plan */}
+          {/* Progress curve - with plan (steep upward) */}
           <Path
-            d={`M 20 120 Q ${(width - 80) / 3} 80 ${(width - 80) / 2} 40 T ${width - 100} 20`}
+            d={`M 20 120 Q ${(width - 80) / 3} 60 ${(width - 80) / 2} 30 T ${width - 100} 10`}
             stroke="#000000"
             strokeWidth="3"
             fill="none"
             strokeLinecap="round"
           />
           
-          {/* Progress curve - without plan (slower) */}
+          {/* Progress curve - without plan (gradual upward) */}
           <Path
-            d={`M 20 120 Q ${(width - 80) / 3} 100 ${(width - 80) / 2} 80 T ${width - 100} 70`}
+            d={`M 20 120 Q ${(width - 80) / 3} 90 ${(width - 80) / 2} 70 T ${width - 100} 50`}
             stroke="#E0E0E0"
             strokeWidth="2"
             fill="none"
@@ -189,10 +189,10 @@ export default function OnboardingScreen7() {
           <Circle cx="20" cy="120" r="6" fill="#FFFFFF" stroke="#000000" strokeWidth="2" />
           
           {/* End point - with plan */}
-          <Circle cx={width - 100} cy="20" r="6" fill="#000000" />
+          <Circle cx={width - 100} cy="10" r="6" fill="#000000" />
           
           {/* End point - without plan */}
-          <Circle cx={width - 100} cy="70" r="6" fill="#FFFFFF" stroke="#E0E0E0" strokeWidth="2" />
+          <Circle cx={width - 100} cy="50" r="6" fill="#FFFFFF" stroke="#E0E0E0" strokeWidth="2" />
         </Svg>
         
         {/* Labels */}
@@ -300,25 +300,19 @@ export default function OnboardingScreen7() {
 
         {/* Timeline Section */}
         <View style={styles.timelineSection}>
-          <Text style={styles.timelineTitle}>Next 2 weeks</Text>
+          <Text style={styles.timelineTitle}>Hitting Your Protein Goal</Text>
           
           <View style={styles.timelineItem}>
-            <Text style={styles.timelineDay}>Day 0-7</Text>
+            <Text style={styles.timelineDay}>Days 0-7:</Text>
             <Text style={styles.timelineDescription}>
-              First 7-10 days: faster recovery, less soreness, maybe a "fuller" look as glycogen/protein storage improves.
+              Muscles feel stronger, less tired. They feel "full" as protein storage improves. Recovery speeds up 50% after workouts and you feel less sore
             </Text>
           </View>
           
           <View style={styles.timelineItem}>
-            <Text style={styles.timelineDay}>Day 7-14</Text>
+            <Text style={styles.timelineDay}>Days 7-14:</Text>
             <Text style={styles.timelineDescription}>
-              First 7-10 days: faster recovery, less soreness, maybe a "fuller" look as glycogen/protein storage improves.
-            </Text>
-          </View>
-          
-          <View style={styles.flipNote}>
-            <Text style={styles.flipNoteText}>
-              Think of it like flipping a switch: performance and feel improve within days, visible physique changes show up in ~2-3 weeks if training and sleep are solid.
+              Muscles grow 109% faster by day 7 of hitting your daily protein goal. Visible gains start showing by week 3 and the habit of hitting your daily protein goal is set.
             </Text>
           </View>
         </View>

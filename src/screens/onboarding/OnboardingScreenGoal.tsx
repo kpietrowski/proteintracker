@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -35,11 +35,15 @@ export default function OnboardingScreenGoal() {
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>
           Hitting your protein{'\n'}goal consistently{'\n'}changes <Text style={styles.underlinedText}>everything</Text>
         </Text>
-      </View>
+      </ScrollView>
 
       {/* Next Button */}
       <TouchableOpacity style={styles.nextButton} onPress={handleNext}>

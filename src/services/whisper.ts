@@ -32,22 +32,34 @@ export class WhisperService {
         const { status } = await Audio.requestPermissionsAsync();
         finalStatus = status;
         console.log('WhisperService: Permission request result:', status);
+        
+        // If permission was just granted, wait a moment for iOS to properly initialize
+        if (status === 'granted') {
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
       }
       
       if (finalStatus !== 'granted') {
         console.error('WhisperService: Audio permission denied');
-        throw new Error('Microphone access is required to use voice input. Please enable it in Settings.');
+        throw new Error('Microphone permission required. Please tap the microphone again after granting permission.');
       }
 
       console.log('WhisperService: Configuring audio mode...');
       // Configure audio mode with better iOS settings
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: false,
-        shouldDuckAndroid: false,
-        playThroughEarpieceAndroid: false,
-      });
+      // Wrap in try-catch to handle background audio session errors gracefully
+      try {
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: true,
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: false,
+          playThroughEarpieceAndroid: false,
+        });
+      } catch (audioModeError: any) {
+        console.log('WhisperService: Audio mode configuration error (may be due to permission prompt):', audioModeError.message);
+        // Continue anyway - this error often occurs during permission prompt
+        // and the audio mode will be set correctly when the user taps again
+      }
 
       // Create custom recording options for consistent quality
       // Using custom options instead of preset to ensure proper recording from built-in mic
@@ -82,7 +94,19 @@ export class WhisperService {
       const recording = new Audio.Recording();
       
       console.log('WhisperService: Preparing to record...');
-      await recording.prepareToRecordAsync(recordingOptions);
+      try {
+        await recording.prepareToRecordAsync(recordingOptions);
+      } catch (prepareError: any) {
+        console.log('WhisperService: Prepare error (may be due to permission prompt):', prepareError.message);
+        // If prepare fails due to background/permission issues, throw a silent error
+        if (prepareError.message?.includes('background') || 
+            prepareError.message?.includes('audio session') ||
+            prepareError.code === 'EXModulesErrorDomain') {
+          // This is expected during permission prompt - user should tap again
+          throw new Error('permission_prompt_in_progress');
+        }
+        throw prepareError;
+      }
       
       console.log('WhisperService: Starting recording...');
       await recording.startAsync();

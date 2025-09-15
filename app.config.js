@@ -1,10 +1,16 @@
-import 'dotenv/config';
+// Load from .env file if it exists (for local development)
+// In EAS Build, these will come from EAS environment variables
+try {
+  require('dotenv/config');
+} catch (e) {
+  // .env file doesn't exist in EAS Build, which is expected
+}
 
 export default {
   expo: {
     name: "ProteinTracker",
     slug: "ProteinTracker",
-    version: "1.0.1",
+    version: "1.0.2",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -31,7 +37,7 @@ export default {
     ],
     ios: {
       supportsTablet: false,
-      buildNumber: "37",
+      buildNumber: "45",
       infoPlist: {
         NSMicrophoneUsageDescription: "Protein AI uses your microphone to allow voice input for quickly and easily logging your protein intake throughout the day.",
         NSCameraUsageDescription: "Protein AI uses your camera to scan food barcodes and labels, making it faster to log protein-rich foods and track your daily goals.",

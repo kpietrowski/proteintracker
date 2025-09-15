@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import * as StoreReview from 'expo-store-review';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -14,60 +14,65 @@ export default function OnboardingScreen19() {
   const [selectedRating, setSelectedRating] = useState<number>(5);
   const [hasRequestedRating, setHasRequestedRating] = useState<boolean>(false);
 
-  // Photo sets based on gender
+  // Photo sets based on gender - more casual, Instagram-style photos
   const femalePhotos = {
     profiles: [
-      'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&h=150&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face'
+      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face', // Casual selfie style
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150&h=150&fit=crop&crop=face', // Natural outdoor shot
+      'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=150&h=150&fit=crop&crop=face'  // Candid smile
     ],
-    testimonial: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&h=100&fit=crop&crop=face'
+    testimonial: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=100&h=100&fit=crop&crop=face' // Casual friendly photo
   };
 
   const malePhotos = {
     profiles: [
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face'
+      'https://images.unsplash.com/photo-1463453091185-61582044d556?w=150&h=150&fit=crop&crop=face', // Relaxed casual shot
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&h=150&fit=crop&crop=face', // Natural lighting
+      'https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=150&h=150&fit=crop&crop=face'  // Friendly casual
     ],
-    testimonial: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=100&h=100&fit=crop&crop=face'
+    testimonial: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=100&h=100&fit=crop&crop=face' // Approachable smile
   };
 
-  // Reviews data based on gender
+  // Reviews data based on gender - including new reviews
   const maleReviews = [
     {
       name: 'Mike R.',
-      text: '"Finally hitting my protein goal an i FEEL IT."'
+      text: '"Finally hitting my protein goal an i FEEL IT."',
+      photo: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=100&h=100&fit=crop&crop=face'
     },
     {
-      name: 'Jake T.',
-      text: '"This app changed my entire approach to nutrition. Gains are real!"'
+      name: 'David L.',
+      text: '"This is so freakin easy. Easiest way to log my 200 grams /day."',
+      photo: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&crop=face'
     },
     {
-      name: 'Carlos M.',
-      text: '"Never thought tracking protein could be this simple. Strength up 20%!"'
+      name: 'Alex K.',
+      text: '"Great job with this app guys. I\'m hitting 185 grams a day now!"',
+      photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face'
     }
   ];
 
   const femaleReviews = [
     {
       name: 'Sarah M.',
-      text: '"Finally hitting my protein goal an i FEEL IT."'
+      text: '"Finally hitting my protein goal an i FEEL IT."',
+      photo: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=100&h=100&fit=crop&crop=face'
     },
     {
-      name: 'Emma L.',
-      text: '"Lost 15lbs while gaining muscle. This app is a game changer!"'
+      name: 'Rachel T.',
+      text: '"Finally seeing a difference in my body when hitting my protein goal most days."',
+      photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face'
     },
     {
-      name: 'Jessica K.',
-      text: '"My energy levels are through the roof! Best protein tracking app ever."'
+      name: 'Emily J.',
+      text: '"So easy to use, no extra fluff… just focused on hitting my protein goal. Love it!"',
+      photo: 'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?w=100&h=100&fit=crop&crop=face'
     }
   ];
 
   // Default to male photos and reviews, use female if gender is Female
   const selectedPhotos = state?.data?.sex === 'Female' ? femalePhotos : malePhotos;
   const selectedReviews = state?.data?.sex === 'Female' ? femaleReviews : maleReviews;
-  const currentReview = selectedReviews[Math.floor(Date.now() / 86400000) % selectedReviews.length];
   const customersText = 'Thousands of happy users';
 
   const handleNext = async () => {
@@ -154,7 +159,11 @@ export default function OnboardingScreen19() {
       </View>
 
       {/* Content */}
-      <View style={styles.content}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>Give us a rating</Text>
 
         <View style={styles.ratingCard}>
@@ -186,31 +195,35 @@ export default function OnboardingScreen19() {
 
         <Text style={styles.photosSubtext}>{customersText}</Text>
 
-        <View style={styles.testimonialCard}>
-          <View style={styles.testimonialHeader}>
-            <View style={styles.profileCircle}>
-              <Image 
-                source={{ uri: selectedPhotos.testimonial }}
-                style={styles.testimonialPhoto}
-              />
+        <View style={styles.reviewsContainer}>
+          {selectedReviews.map((review, index) => (
+            <View key={index} style={styles.testimonialCard}>
+              <View style={styles.testimonialHeader}>
+                <View style={styles.profileCircle}>
+                  <Image 
+                    source={{ uri: review.photo }}
+                    style={styles.testimonialPhoto}
+                  />
+                </View>
+                <Text style={styles.reviewerName}>{review.name}</Text>
+                <View style={styles.reviewStars}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Ionicons
+                      key={star}
+                      name="star"
+                      size={12}
+                      color="#FFD700"
+                    />
+                  ))}
+                </View>
+              </View>
+              <Text style={styles.testimonialText}>
+                {review.text}
+              </Text>
             </View>
-            <Text style={styles.reviewerName}>{currentReview.name}</Text>
-            <View style={styles.reviewStars}>
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Ionicons
-                  key={star}
-                  name="star"
-                  size={12}
-                  color="#FFD700"
-                />
-              ))}
-            </View>
-          </View>
-          <Text style={styles.testimonialText}>
-            {currentReview.text}
-          </Text>
+          ))}
         </View>
-      </View>
+      </ScrollView>
 
       {/* Next Button */}
       <TouchableOpacity
@@ -265,10 +278,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     borderRadius: 2,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 20,
+    paddingBottom: 20,
     alignItems: 'center',
   },
   title: {
@@ -336,10 +353,15 @@ const styles = StyleSheet.create({
     color: '#6B6B6B',
     marginBottom: 30,
   },
+  reviewsContainer: {
+    width: '100%',
+    marginTop: 10,
+  },
   testimonialCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
     padding: 16,
+    marginBottom: 12,
     width: '100%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

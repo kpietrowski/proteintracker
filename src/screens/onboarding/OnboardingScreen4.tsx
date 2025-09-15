@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Keyboard, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,7 +9,7 @@ import { hapticFeedback } from '../../utils/haptics';
 export default function OnboardingScreen4() {
   const navigation = useNavigation();
   const { state, setAge: setAgeInContext } = useOnboarding();
-  const [age, setAge] = useState<string>(state.data.age ? state.data.age.toString() : '35');
+  const [age, setAge] = useState<string>(state.data.age ? state.data.age.toString() : '');
   const [isValid, setIsValid] = useState<boolean>(true);
 
   useEffect(() => {
@@ -44,64 +44,73 @@ export default function OnboardingScreen4() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.container}>
-          {/* Progress Bar */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressHeader}>
-              <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-                <Ionicons name="chevron-back" size={24} color="#1A1A1A" />
-              </TouchableOpacity>
-              <View style={styles.backButton} />
-              <View style={styles.backButton} />
-            </View>
-            <View style={styles.progressBar}>
-              <View style={[styles.progressFill, { width: '10%' }]} />
-            </View>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {/* Progress Bar */}
+        <View style={styles.progressContainer}>
+          <View style={styles.progressHeader}>
+            <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+              <Ionicons name="chevron-back" size={24} color="#1A1A1A" />
+            </TouchableOpacity>
+            <View style={styles.backButton} />
+            <View style={styles.backButton} />
           </View>
-
-          {/* Content */}
-          <View style={styles.content}>
-            <Text style={styles.title}>How old are you?</Text>
-            <Text style={styles.subtitle}>
-              Age helps us calculate your personalized protein needs.
-            </Text>
-
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>Enter your age:</Text>
-              <TextInput
-                style={[
-                  styles.ageInput,
-                  !isValid && styles.ageInputError
-                ]}
-                value={age}
-                onChangeText={handleAgeChange}
-                placeholder="35"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                maxLength={3}
-                onSubmitEditing={Keyboard.dismiss}
-                returnKeyType="done"
-              />
-              {!isValid && (
-                <Text style={styles.errorText}>
-                  Please enter a valid age (13-120)
-                </Text>
-              )}
-            </View>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: '10%' }]} />
           </View>
+        </View>
 
-          {/* Next Button */}
-          <TouchableOpacity
-            style={[
-              styles.nextButton,
-              (!age || !isValid) && styles.nextButtonDisabled
-            ]}
-            onPress={handleNext}
-            disabled={!age || !isValid}
-          >
-            <Text style={styles.nextButtonText}>Next</Text>
-          </TouchableOpacity>
-      </View>
+        {/* Content */}
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.title}>How old are you?</Text>
+          <Text style={styles.subtitle}>
+            Age helps us calculate your personalized protein needs.
+          </Text>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Enter your age:</Text>
+            <TextInput
+              style={[
+                styles.ageInput,
+                !isValid && styles.ageInputError
+              ]}
+              value={age}
+              onChangeText={handleAgeChange}
+              placeholder="0"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              maxLength={3}
+              onSubmitEditing={Keyboard.dismiss}
+              returnKeyType="done"
+              autoFocus={true}
+            />
+            {!isValid && (
+              <Text style={styles.errorText}>
+                Please enter a valid age (13-120)
+              </Text>
+            )}
+          </View>
+        </ScrollView>
+
+        {/* Next Button */}
+        <TouchableOpacity
+          style={[
+            styles.nextButton,
+            (!age || !isValid) && styles.nextButtonDisabled
+          ]}
+          onPress={handleNext}
+          disabled={!age || !isValid}
+        >
+          <Text style={styles.nextButtonText}>Next</Text>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -145,9 +154,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#000000',
     borderRadius: 2,
   },
-  content: {
+  scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 20,
+    paddingBottom: 20,
   },
   title: {
     fontSize: 32,
