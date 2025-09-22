@@ -10,7 +10,7 @@ export default {
   expo: {
     name: "ProteinTracker",
     slug: "ProteinTracker",
-    version: "1.0.2",
+    version: "1.0.4",
     orientation: "portrait",
     icon: "./assets/icon.png",
     userInterfaceStyle: "light",
@@ -37,12 +37,15 @@ export default {
     ],
     ios: {
       supportsTablet: false,
-      buildNumber: "45",
+      buildNumber: "50",
       infoPlist: {
         NSMicrophoneUsageDescription: "Protein AI uses your microphone to allow voice input for quickly and easily logging your protein intake throughout the day.",
         NSCameraUsageDescription: "Protein AI uses your camera to scan food barcodes and labels, making it faster to log protein-rich foods and track your daily goals.",
         NSUserNotificationsUsageDescription: "Protein AI uses notifications to help you track your protein goals, celebrate milestones, and send helpful reminders throughout your fitness journey.",
         ITSAppUsesNonExemptEncryption: false
+      },
+      entitlements: {
+        "com.apple.developer.in-app-payments": []
       },
       bundleIdentifier: "com.protein.proteintracker"
     },
