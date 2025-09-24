@@ -37,7 +37,7 @@ export default {
     ],
     ios: {
       supportsTablet: false,
-      buildNumber: "51",
+      buildNumber: "52",
       infoPlist: {
         NSMicrophoneUsageDescription: "Protein AI uses your microphone to allow voice input for quickly and easily logging your protein intake throughout the day.",
         NSCameraUsageDescription: "Protein AI uses your camera to scan food barcodes and labels, making it faster to log protein-rich foods and track your daily goals.",

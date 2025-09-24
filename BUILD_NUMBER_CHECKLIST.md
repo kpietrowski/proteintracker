@@ -18,6 +18,24 @@
 - Update: `CURRENT_PROJECT_VERSION` values
 - Note: Usually auto-updated by Xcode
 
+## CRITICAL: Environment Variables Checklist
+
+### When adding ANY new secret/environment variable:
+1. **Add to EAS secrets**: `eas secret:create --name KEY_NAME --value "value"`
+2. **IMMEDIATELY add to eas.json**:
+   ```json
+   "env": {
+     "KEY_NAME": "$KEY_NAME"  // Must use $ prefix to reference EAS secret
+   }
+   ```
+3. **VERIFY in build output**: Check that variable appears in:
+   "Environment variables loaded from the production build profile"
+
+### ⚠️ WARNING: EAS secrets are NOT automatically loaded!
+- Just adding to `eas secret:create` is NOT enough
+- Must ALSO add to eas.json env section
+- Always check build output to confirm loading
+
 ## Build Process Reminders:
 
 1. **ALWAYS commit and push changes** - EAS Build uses the remote repository, not local files
