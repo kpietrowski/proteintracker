@@ -23,6 +23,7 @@ import { colors } from '../constants/colors';
 import { DailySummary, WeeklyProgress, DayProgress } from '../types';
 import { localStorageService } from '../services/localStorage';
 import { hapticFeedback } from '../utils/haptics';
+import { ratingService } from '../services/ratingService';
 
 const { width } = Dimensions.get('window');
 
@@ -149,8 +150,31 @@ export default function HomeScreen() {
         duration: 2000,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: false,
-      }).start(() => {
+      }).start(async () => {
         animatedProtein.removeListener(proteinListener);
+
+        // Check if this is the first protein entry and request rating
+        if (previousProteinRef.current === 0 && currentProtein > 0) {
+          try {
+            const isFirstEntry = await localStorageService.getFirstProteinEntryStatus();
+            const ratingState = await ratingService.getRatingState();
+
+            if (isFirstEntry && ratingState.requestCount < 3) {
+              console.log('🥚 First protein entry animated! Scheduling rating request...');
+
+              // Request rating after 1 second (after user has seen the animation)
+              setTimeout(async () => {
+                console.log('🌟 Requesting rating after first protein entry');
+                const success = await ratingService.requestRating('first_protein');
+                if (success) {
+                  console.log('🌟 Rating dialog shown after first protein entry!');
+                }
+              }, 1000);
+            }
+          } catch (error) {
+            console.error('Error handling first protein entry rating:', error);
+          }
+        }
       });
       
       // Animate the remaining protein counting down
@@ -662,19 +686,43 @@ export default function HomeScreen() {
     }
   };
 
-  const triggerGoalCompleteCelebration = () => {
+  const triggerGoalCompleteCelebration = async () => {
     // EPIC HAPTIC CELEBRATION! 🎉
     hapticFeedback.epicCelebration();
-    
+
     // Show sophisticated success notification first
     setShowSuccessNotification(true);
-    
+
     // Set static scale - no pulsing
     numberScale.setValue(1);
-    
+
     // Start stars animation immediately
     setShowBackgroundStars(true);
     createContinuousStars();
+
+    // Check if this is the first goal achievement and request rating
+    try {
+      const isFirstGoal = !(await localStorageService.getFirstGoalAchievedStatus());
+      const ratingState = await ratingService.getRatingState();
+
+      if (isFirstGoal && ratingState.requestCount < 3) {
+        console.log('🎯 First goal achieved! Scheduling rating request...');
+
+        // Mark first goal as achieved
+        await localStorageService.setFirstGoalAchieved();
+
+        // Request rating after 4 seconds (after celebration is visible)
+        setTimeout(async () => {
+          console.log('🌟 Requesting rating after first goal achievement');
+          const success = await ratingService.requestRating('first_goal');
+          if (success) {
+            console.log('🌟 Rating dialog shown after first goal achievement!');
+          }
+        }, 4000);
+      }
+    } catch (error) {
+      console.error('Error handling first goal rating:', error);
+    }
   };
   
   const dismissSuccessNotification = () => {

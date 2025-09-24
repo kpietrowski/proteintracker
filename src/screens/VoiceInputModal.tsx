@@ -145,6 +145,13 @@ export default function VoiceInputModal() {
       // Update the 7 PM notification if it's for today
       await notificationService.updateProteinLeftNotification(adjustedProtein);
 
+      // Check if this is the user's first protein entry (but don't request rating here)
+      const isFirstEntry = !(await localStorageService.getFirstProteinEntryStatus());
+      if (isFirstEntry) {
+        console.log('🌟 First protein entry detected!');
+        await localStorageService.setFirstProteinEntryComplete();
+      }
+
       // Navigate back to home screen immediately
       navigation.goBack();
     } catch (error) {

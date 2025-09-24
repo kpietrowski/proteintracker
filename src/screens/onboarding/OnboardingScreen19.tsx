@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
-import * as StoreReview from 'expo-store-review';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { Ionicons } from '@expo/vector-icons';
 import { hapticFeedback } from '../../utils/haptics';
+import { ratingService } from '../../services/ratingService';
 
 
 export default function OnboardingScreen19() {
@@ -77,23 +77,19 @@ export default function OnboardingScreen19() {
 
   const handleNext = async () => {
     hapticFeedback.medium();
-    
+
     // If we haven't requested rating yet, show the native rating dialog first
     if (!hasRequestedRating) {
       try {
         console.log('🌟 First tap - requesting native in-app rating...');
-        
-        // Check if in-app rating is available
-        const isAvailable = await StoreReview.isAvailableAsync();
-        console.log('🌟 In-app rating available:', isAvailable);
-        
-        if (isAvailable) {
-          // This shows the native iOS rating dialog with 5 stars
-          // Users can rate without leaving the app
-          await StoreReview.requestReview();
-          console.log('🌟 Native in-app rating dialog shown!');
+
+        // Use the rating service to handle the request
+        const success = await ratingService.requestRating('onboarding');
+
+        if (success) {
+          console.log('🌟 Native in-app rating dialog shown from onboarding!');
         } else {
-          console.log('🌟 In-app rating not available (might be in dev/simulator)');
+          console.log('🌟 Rating request skipped (limit reached, already used, or not available)');
         }
       } catch (error) {
         console.log('🌟 Store review error:', error);
