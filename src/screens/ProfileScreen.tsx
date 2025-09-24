@@ -8,12 +8,15 @@ import {
   SafeAreaView,
   TextInput,
   Alert,
+  Modal,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { WebView } from 'react-native-webview';
 import { colors } from '../constants/colors';
 import { User, ProfileStats } from '../types';
 import { localStorageService } from '../services/localStorage';
 import { purchaseService } from '../services/purchases';
+import { ratingService } from '../services/ratingService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function ProfileScreen() {
@@ -23,6 +26,7 @@ export default function ProfileScreen() {
   const [isEditingGoal, setIsEditingGoal] = useState(false);
   const [tempName, setTempName] = useState('');
   const [tempGoal, setTempGoal] = useState('');
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   useEffect(() => {
     loadUserData();
@@ -242,6 +246,24 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleGiveFeedback = () => {
+    setShowFeedbackModal(true);
+  };
+
+  const handleRateApp = async () => {
+    try {
+      console.log('⭐ Manual rating request from profile');
+      const success = await ratingService.requestRating('manual_request');
+      if (success) {
+        console.log('⭐ Rating dialog shown from profile!');
+      } else {
+        console.log('⭐ Rating request limit reached or not available');
+      }
+    } catch (error) {
+      console.error('Error requesting rating:', error);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Header with Save/Cancel Buttons */}
@@ -352,41 +374,55 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* Action Buttons */}
+        <View style={styles.actionButtonsSection}>
+          {/* Give Feedback Button */}
+          <TouchableOpacity style={styles.actionButton} onPress={handleGiveFeedback}>
+            <Text style={styles.actionButtonText}>Give Feedback!</Text>
+          </TouchableOpacity>
+
+          {/* Rate App Button */}
+          <TouchableOpacity style={styles.actionButton} onPress={handleRateApp}>
+            <Text style={styles.actionButtonText}>Give us a 5-star Rating ❤️</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Settings */}
         <View style={styles.settingsSection}>
+
           {/* Commented out unimplemented features for App Store submission
           <TouchableOpacity style={styles.settingItem}>
             <Text style={styles.settingText}>Notifications</Text>
             <Text style={styles.settingArrow}>›</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.settingItem}>
             <Text style={styles.settingText}>Subscription</Text>
             <Text style={styles.settingArrow}>›</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.settingItem}>
             <Text style={styles.settingText}>Privacy Policy</Text>
             <Text style={styles.settingArrow}>›</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.settingItem}>
             <Text style={styles.settingText}>Terms of Service</Text>
             <Text style={styles.settingArrow}>›</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.settingItem}>
             <Text style={styles.settingText}>Support</Text>
             <Text style={styles.settingArrow}>›</Text>
           </TouchableOpacity>
           */}
-          
+
           {/* Testing features removed for App Store submission
           <TouchableOpacity style={styles.settingItem} onPress={handleClearTestData}>
             <Text style={[styles.settingText, { color: colors.secondary.orange }]}>Reset Today's Protein</Text>
             <Text style={styles.settingArrow}>🗑️</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.settingItem} onPress={handleFullReset}>
             <Text style={[styles.settingText, { color: '#FF0000' }]}>Full Reset to Onboarding</Text>
             <Text style={styles.settingArrow}>🔄</Text>
@@ -394,6 +430,36 @@ export default function ProfileScreen() {
           */}
         </View>
       </ScrollView>
+
+      {/* Feedback WebView Modal */}
+      <Modal
+        visible={showFeedbackModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowFeedbackModal(false)}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Give Feedback</Text>
+            <View style={styles.spacer} />
+          </View>
+          <WebView
+            source={{ uri: 'https://superforms.co/form/3bfa5148-b9fd-4765-b283-7dc4115f694d' }}
+            style={styles.webview}
+            startInLoadingState={true}
+            renderLoading={() => (
+              <View style={styles.loadingContainer}>
+                <Text>Loading feedback form...</Text>
+              </View>
+            )}
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -569,5 +635,65 @@ const styles = StyleSheet.create({
   settingArrow: {
     fontSize: 20,
     color: colors.text.secondary,
+  },
+  actionButtonsSection: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    gap: 12,
+  },
+  actionButton: {
+    backgroundColor: '#FF7B7B',
+    borderRadius: 16,
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  actionButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    textAlign: 'center',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: colors.background.main,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.status.neutral,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.status.neutral,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text.primary,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text.primary,
+    textAlign: 'center',
+    flex: 1,
+  },
+  webview: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.background.main,
   },
 });
