@@ -5,7 +5,9 @@ const STORAGE_KEYS = {
   USER_PROFILE: 'user_profile',
   PROTEIN_LOGS: 'protein_logs',
   APP_SETTINGS: 'app_settings',
-  ONBOARDING_COMPLETE: 'onboarding_complete'
+  ONBOARDING_COMPLETE: 'onboarding_complete',
+  FIRST_PROTEIN_ENTRY_COMPLETE: 'first_protein_entry_complete',
+  FIRST_GOAL_ACHIEVED: 'first_goal_achieved'
 };
 
 // Type definitions for local data
@@ -345,7 +347,9 @@ class LocalStorageService {
         STORAGE_KEYS.USER_PROFILE,
         STORAGE_KEYS.PROTEIN_LOGS,
         STORAGE_KEYS.APP_SETTINGS,
-        STORAGE_KEYS.ONBOARDING_COMPLETE
+        STORAGE_KEYS.ONBOARDING_COMPLETE,
+        STORAGE_KEYS.FIRST_PROTEIN_ENTRY_COMPLETE,
+        STORAGE_KEYS.FIRST_GOAL_ACHIEVED
       ]);
       console.log('✅ All local data cleared');
     } catch (error) {
@@ -359,18 +363,58 @@ class LocalStorageService {
       const allLogsJson = await AsyncStorage.getItem(STORAGE_KEYS.PROTEIN_LOGS);
       const allLogs = allLogsJson ? JSON.parse(allLogsJson) : {};
       const settings = await this.getAppSettings();
-      
+
       const exportData = {
         userProfile: profile,
         proteinLogs: allLogs,
         appSettings: settings,
         exportDate: new Date().toISOString()
       };
-      
+
       return JSON.stringify(exportData, null, 2);
     } catch (error) {
       console.error('❌ Failed to export data:', error);
       return '{}';
+    }
+  }
+
+  // ============= RATING TRACKING METHODS =============
+
+  async getFirstProteinEntryStatus(): Promise<boolean> {
+    try {
+      const status = await AsyncStorage.getItem(STORAGE_KEYS.FIRST_PROTEIN_ENTRY_COMPLETE);
+      return status === 'true';
+    } catch (error) {
+      console.error('❌ Failed to get first protein entry status:', error);
+      return false;
+    }
+  }
+
+  async setFirstProteinEntryComplete(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.FIRST_PROTEIN_ENTRY_COMPLETE, 'true');
+      console.log('✅ First protein entry marked as complete');
+    } catch (error) {
+      console.error('❌ Failed to set first protein entry complete:', error);
+    }
+  }
+
+  async getFirstGoalAchievedStatus(): Promise<boolean> {
+    try {
+      const status = await AsyncStorage.getItem(STORAGE_KEYS.FIRST_GOAL_ACHIEVED);
+      return status === 'true';
+    } catch (error) {
+      console.error('❌ Failed to get first goal achieved status:', error);
+      return false;
+    }
+  }
+
+  async setFirstGoalAchieved(): Promise<void> {
+    try {
+      await AsyncStorage.setItem(STORAGE_KEYS.FIRST_GOAL_ACHIEVED, 'true');
+      console.log('✅ First goal achievement marked as complete');
+    } catch (error) {
+      console.error('❌ Failed to set first goal achieved:', error);
     }
   }
 }
