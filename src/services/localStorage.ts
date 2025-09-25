@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getLocalDateKey, getUTCDateKey } from '../utils/dateHelpers';
 
 // Local storage keys
 const STORAGE_KEYS = {
@@ -153,9 +154,33 @@ class LocalStorageService {
       if (!allLogsJson) {
         return [];
       }
-      
+
       const allLogs = JSON.parse(allLogsJson);
-      return allLogs[date] || [];
+
+      // Try to get logs with the provided date key first (should be local date)
+      let logs = allLogs[date] || [];
+
+      // Migration support: If no logs found and date looks like a local date,
+      // also check the UTC date key for backwards compatibility
+      if (logs.length === 0 && date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        // Parse the date and check if there's data stored with UTC key
+        const [year, month, day] = date.split('-').map(Number);
+        const localDate = new Date(year, month - 1, day);
+        const utcDateKey = getUTCDateKey(localDate);
+
+        if (utcDateKey !== date && allLogs[utcDateKey]) {
+          logs = allLogs[utcDateKey];
+
+          // Migrate the data to use local date key
+          allLogs[date] = logs;
+          delete allLogs[utcDateKey];
+          await AsyncStorage.setItem(STORAGE_KEYS.PROTEIN_LOGS, JSON.stringify(allLogs));
+
+          console.log(`Migrated protein data from UTC key ${utcDateKey} to local key ${date}`);
+        }
+      }
+
+      return logs;
       
     } catch (error) {
       console.error('❌ Failed to get protein logs for date:', error);
@@ -292,7 +317,7 @@ class LocalStorageService {
       let checkDate = new Date();
       
       // First, check if today's goal has been met
-      const todayKey = checkDate.toISOString().split('T')[0];
+      const todayKey = getLocalDateKey(checkDate);
       const todayEntries = await this.getProteinLogsForDate(todayKey);
       
       if (todayEntries.length > 0) {
@@ -313,7 +338,7 @@ class LocalStorageService {
       
       // Check up to 365 days back
       for (let i = 0; i < 365; i++) {
-        const dateKey = checkDate.toISOString().split('T')[0];
+        const dateKey = getLocalDateKey(checkDate);
         const entries = await this.getProteinLogsForDate(dateKey);
         
         if (entries.length === 0) {

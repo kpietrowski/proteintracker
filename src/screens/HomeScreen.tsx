@@ -24,6 +24,7 @@ import { DailySummary, WeeklyProgress, DayProgress } from '../types';
 import { localStorageService } from '../services/localStorage';
 import { hapticFeedback } from '../utils/haptics';
 import { ratingService } from '../services/ratingService';
+import { getLocalDateKey } from '../utils/dateHelpers';
 
 const { width } = Dimensions.get('window');
 
@@ -218,7 +219,7 @@ export default function HomeScreen() {
       for (let i = 0; i < 30; i++) { // Check up to 30 days back
         const checkDate = new Date(today);
         checkDate.setDate(today.getDate() - i);
-        const dateKey = checkDate.toISOString().split('T')[0];
+        const dateKey = getLocalDateKey(checkDate);
         
         try {
           const entries = await localStorageService.getProteinLogsForDate(dateKey);
@@ -298,7 +299,7 @@ export default function HomeScreen() {
       const userGoal = profile?.proteinGoal || 150;
       
       // Get today's protein entries
-      const dateKey = new Date().toISOString().split('T')[0];
+      const dateKey = getLocalDateKey();
       const todayEntries = await localStorageService.getProteinLogsForDate(dateKey);
       
       // Calculate total protein from entries
@@ -358,7 +359,7 @@ export default function HomeScreen() {
       for (let i = 0; i < 7; i++) {
         const date = new Date(startOfWeek);
         date.setDate(startOfWeek.getDate() + i);
-        const dateKey = date.toISOString().split('T')[0];
+        const dateKey = getLocalDateKey(date);
         
         // Get entries for this day
         const dayEntries = await localStorageService.getProteinLogsForDate(dateKey);
@@ -376,7 +377,7 @@ export default function HomeScreen() {
           proteinAmount: dayProtein,
           goalAmount: userGoal,
           goalMet,
-          isToday: dateKey === today.toISOString().split('T')[0],
+          isToday: dateKey === getLocalDateKey(today),
           isFuture: date > today,
         });
       }
@@ -413,7 +414,7 @@ export default function HomeScreen() {
       for (let i = 0; i < 30; i++) { // Check up to 30 days back
         const checkDate = new Date(today);
         checkDate.setDate(today.getDate() - i);
-        const dateKey = checkDate.toISOString().split('T')[0];
+        const dateKey = getLocalDateKey(checkDate);
         
         const dayEntries = await localStorageService.getProteinLogsForDate(dateKey);
         const totalProtein = dayEntries.reduce((sum, entry) => sum + entry.amount, 0);
@@ -434,7 +435,7 @@ export default function HomeScreen() {
 
   const loadMockDailySummary = async (): Promise<DailySummary> => {
     // Get stored protein entries from localStorage service
-    const dateKey = new Date().toISOString().split('T')[0];
+    const dateKey = getLocalDateKey();
     
     try {
       // Get user's actual protein goal - check AsyncStorage first for immediate updates
@@ -532,7 +533,7 @@ export default function HomeScreen() {
         const pastDate = new Date();
         const daysDiff = today - index;
         pastDate.setDate(pastDate.getDate() - daysDiff);
-        const dateKey = pastDate.toISOString().split('T')[0];
+        const dateKey = getLocalDateKey(pastDate);
         
         try {
           const entries = await localStorageService.getProteinLogsForDate(dateKey);
@@ -592,7 +593,7 @@ export default function HomeScreen() {
   const handleDeleteEntry = async (entryIndex: number) => {
     try {
       // Get current entries from local storage
-      const dateKey = new Date().toISOString().split('T')[0];
+      const dateKey = getLocalDateKey();
       const entries = await localStorageService.getProteinLogsForDate(dateKey);
       
       if (entries[entryIndex]) {

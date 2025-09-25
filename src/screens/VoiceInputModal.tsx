@@ -20,6 +20,7 @@ import { notificationService } from '../services/notificationService';
 import { colors } from '../constants/colors';
 import { VoiceInputResult } from '../types';
 import { hapticFeedback } from '../utils/haptics';
+import { getLocalDateKey } from '../utils/dateHelpers';
 
 export default function VoiceInputModal() {
   const navigation = useNavigation();
@@ -134,7 +135,7 @@ export default function VoiceInputModal() {
       // Save protein entry to local storage
       console.log('Saving protein entry to local storage');
       
-      const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+      const today = getLocalDateKey(); // Use local date, not UTC
       await localStorageService.addProteinEntry(
         today,
         adjustedProtein,

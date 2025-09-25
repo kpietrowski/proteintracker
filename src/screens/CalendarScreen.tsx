@@ -12,6 +12,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { colors } from '../constants/colors';
 import { MonthlyCalendarData, CalendarDay, MonthlyStats } from '../types';
 import { localStorageService } from '../services/localStorage';
+import { getLocalDateKey } from '../utils/dateHelpers';
 
 export default function CalendarScreen() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -48,7 +49,7 @@ export default function CalendarScreen() {
 
       for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
-        const dateKey = date.toISOString().split('T')[0];
+        const dateKey = getLocalDateKey(date);
         
         try {
           const entries = await localStorageService.getProteinLogsForDate(dateKey);
@@ -94,7 +95,7 @@ export default function CalendarScreen() {
       const currentDate = new Date(startDate);
       currentDate.setDate(startDate.getDate() + i);
       
-      const currentDateKey = currentDate.toISOString().split('T')[0];
+      const currentDateKey = getLocalDateKey(currentDate);
       const dayData = data.find(d => d.date === currentDateKey);
 
       const isCurrentMonth = currentDate.getMonth() === month;

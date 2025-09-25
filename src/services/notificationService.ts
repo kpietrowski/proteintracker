@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import { localStorageService } from './localStorage';
+import { getLocalDateKey } from '../utils/dateHelpers';
 
 // Notification IDs for managing updates/cancellations
 const NOTIFICATION_IDS = {
@@ -101,7 +102,7 @@ class NotificationService {
       const proteinGoal = profile?.proteinGoal || 150;
       
       // Get today's protein logs
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateKey();
       const todayLogs = await localStorageService.getProteinLogsForDate(today);
       const totalProtein = todayLogs.reduce((sum, log) => sum + log.amount, 0);
       
@@ -155,7 +156,7 @@ class NotificationService {
       const proteinGoal = profile?.proteinGoal || 150;
       
       // Get today's total protein (including the new entry)
-      const today = new Date().toISOString().split('T')[0];
+      const today = getLocalDateKey();
       const todayLogs = await localStorageService.getProteinLogsForDate(today);
       const totalProtein = todayLogs.reduce((sum, log) => sum + log.amount, 0);
       

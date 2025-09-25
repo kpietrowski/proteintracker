@@ -18,6 +18,7 @@ import { localStorageService } from '../services/localStorage';
 import { purchaseService } from '../services/purchases';
 import { ratingService } from '../services/ratingService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getLocalDateKey } from '../utils/dateHelpers';
 
 export default function ProfileScreen() {
   const [user, setUser] = useState<User | null>(null);
@@ -175,7 +176,7 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               // Get current date key for today's protein data
-              const dateKey = new Date().toISOString().split('T')[0];
+              const dateKey = getLocalDateKey();
               
               // Clear today's protein entries using localStorage service
               await localStorageService.clearProteinEntriesForDate(dateKey);
